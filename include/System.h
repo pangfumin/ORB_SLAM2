@@ -101,6 +101,12 @@ public:
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
     void SaveKeyFrameTrajectoryTUM(const string &filename);
 
+    // Save keyframe poses and relative map points in the TUM RGB-D dataset format.
+        // Use this function in the monocular case.
+        // Call first Shutdown()
+        // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
+    void SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &filename);
+
     // Save camera trajectory in the KITTI dataset format.
     // Call first Shutdown()
     // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
