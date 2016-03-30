@@ -165,7 +165,7 @@ std::string Output::getJSON(){
 		structureObject.AddMember("key", pMP->mnId, allocator);
 
 		cv::Mat p = pMP->GetWorldPos();
-		XArray.PushBack(p.at<float>(0), allocator).PushBack(p.at<float>(0), allocator).PushBack(p.at<float>(0), allocator);
+		XArray.PushBack(p.at<float>(0), allocator).PushBack(p.at<float>(1), allocator).PushBack(p.at<float>(2), allocator);
 
 		structureObject.AddMember("num_obs", pMP->Observations(), allocator);
 		rapidjson::Value observationsArray(rapidjson::kArrayType);
