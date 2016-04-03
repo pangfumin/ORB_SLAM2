@@ -20,7 +20,7 @@ public:
 	Output(std::vector<KeyFrame*> KFs);
 	virtual ~Output();
 	std::string getJSON();
-
+	std::string getYamlSfM();
 	std::vector<KeyFrame*> vpKFs;
 
 };

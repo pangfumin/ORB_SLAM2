@@ -5,11 +5,66 @@
  *      Author: Enrico Piazza
  */
 
-#include <Output.h>
-#include <Thirdparty/rapidjson/document.h>
-#include <Thirdparty/rapidjson/prettywriter.h>
-#include <Thirdparty/rapidjson/rapidjson.h>
-#include <Thirdparty/rapidjson/stringbuffer.h>
+#include "../include/Output.h"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/mat.hpp>
+#include <stddef.h>
+#include <yaml-cpp/node/impl.h>
+#include <yaml-cpp/node/node.h>
+#include <algorithm>
+#include <iostream>
+#include <set>
+#include <utility>
+
+#include "../include/MapPoint.h"
+#include "../Thirdparty/rapidjson/document.h"
+#include "../Thirdparty/rapidjson/prettywriter.h"
+#include "../Thirdparty/rapidjson/rapidjson.h"
+#include "../Thirdparty/rapidjson/stringbuffer.h"
+
+namespace YAML {
+
+template<>
+struct convert<ORB_SLAM2::MapPoint*> { //TODO
+  static Node encode(const ORB_SLAM2::MapPoint *mp) {
+    Node node;
+    node["id"] = mp->mnId;
+    return node;
+  }
+
+  static bool decode(const Node& node, ORB_SLAM2::MapPoint& mp) {
+//    if(!node.IsSequence() || node.size() != 3) {
+//      return false;
+//    }
+
+    mp.mnId = node["id"].as<long unsigned int>();
+    return true;
+  }
+};
+
+
+template<>
+struct convert<ORB_SLAM2::KeyFrame*> { //TODO
+  static Node encode(const ORB_SLAM2::KeyFrame *kf) {
+    Node node;
+    node["id"] = kf->mnId;
+    return node;
+  }
+
+  static bool decode(const Node& node, ORB_SLAM2::KeyFrame& kf) {
+//    if(!node.IsSequence() || node.size() != 3) {
+//      return false;
+//    }
+
+    kf.mnId = node["id"].as<long unsigned int>();
+    return true;
+  }
+};
+
+
+}
+
 
 namespace ORB_SLAM2{
 
@@ -18,6 +73,45 @@ Output::Output(std::vector<KeyFrame*> KFs) {
 }
 
 Output::~Output() {
+}
+
+
+std::string Output::getYamlSfM(){
+	sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+	//rapidjson::Document jsonDoc;
+	//jsonDoc.SetObject();
+	//rapidjson::Document::AllocatorType& allocator = jsonDoc.GetAllocator();
+	YAML::Node node;
+
+	// for each KF, add the observed MPs to the MPs set.
+	std::set<MapPoint*> vpAllMPs;
+
+	for(auto pKF : vpKFs){
+		if(pKF->isBad()) continue;
+
+		std::set<MapPoint*> vpMPs = pKF->GetMapPoints();
+		for(auto pMP : vpMPs){
+			vpAllMPs.insert(pMP);
+		}
+	}
+
+
+	for(size_t i=0; i<vpKFs.size(); i++){
+		KeyFrame* pKF = vpKFs[i]; //TODO right?
+
+		YAML::Node kfNode = YAML::convert<KeyFrame*>(pKF);
+		node["KFs"].push_back(kfNode);
+
+		for(auto pMP : vpAllMPs){
+			YAML::Node mpNode = YAML::convert<MapPoint*>(pMP);
+			kfNode["points"].push_back(mpNode);
+		}
+	}
+
+	return node.as<std::string>();
+
+	//TODO test, add intrinsics
 }
 
 

@@ -455,7 +455,32 @@ void Tracking::Track()
 
             // Check if we need to insert a new keyframe
             if(NeedNewKeyFrame())
+            {
+
+            	//TEST: print old KF
+				ofstream outfile; outfile.open("inc_KFs_and_MPs.txt", std::ios_base::app);
+
+				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "nMPs: " << mpReferenceKF->GetMapPoints().size() << endl;
+
+				for(auto iMP : mpReferenceKF->GetMapPoints())
+				{
+					cv::Mat pos = iMP->GetWorldPos();
+					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t x: " << pos.at<float>(0) << "\t x: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+				}
+
                 CreateNewKeyFrame();
+
+                //TEST: print new KF
+                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "nMPs: " << mpReferenceKF->GetMapPoints().size() << endl;
+
+                for(auto iMP : mpReferenceKF->GetMapPoints())
+                {
+					cv::Mat pos = iMP->GetWorldPos();
+					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t x: " << pos.at<float>(0) << "\t x: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+                }
+                outfile.close();
+
+            }
 
             // We allow points with high innovation (considererd outliers by the Huber Function)
             // pass to the new keyframe, so that bundle adjustment will finally decide
