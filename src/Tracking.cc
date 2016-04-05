@@ -48,6 +48,11 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
 {
+
+	// TEST
+	//Output mOutput;
+
+
     // Load camera parameters from settings file
 
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -458,29 +463,37 @@ void Tracking::Track()
             {
 
             	//TEST: print old KF
-				ofstream outfile; outfile.open("inc_KFs_and_MPs.txt", std::ios_base::app);
+//				ofstream outfile; outfile.open("inc_KFs_and_MPs.txt", std::ios_base::app);
+//
+//				cv::Mat kfPos = mpReferenceKF->GetCameraCenter();
+//
+//				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
+//
+//				for(auto iMP : mpReferenceKF->GetMapPoints())
+//				{
+//					cv::Mat pos = iMP->GetWorldPos();
+//					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+//				}
 
-				cv::Mat kfPos = mpReferenceKF->GetCameraCenter();
+            	mOutput.add(mpReferenceKF);
 
-				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
-
-				for(auto iMP : mpReferenceKF->GetMapPoints())
-				{
-					cv::Mat pos = iMP->GetWorldPos();
-					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
-				}
+//            	ofstream f;
+//            	f.open("inc_KFs_and_MPs.txt");
+//            	f << fixed;
+//            	f << mOutput.getIncJSON();
+//            	f.close();
 
                 CreateNewKeyFrame();
 
                 //TEST: print new KF
-                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
-
-                for(auto iMP : mpReferenceKF->GetMapPoints())
-                {
-					cv::Mat pos = iMP->GetWorldPos();
-					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
-                }
-                outfile.close();
+//                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
+//
+//                for(auto iMP : mpReferenceKF->GetMapPoints())
+//                {
+//					cv::Mat pos = iMP->GetWorldPos();
+//					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+//                }
+//                outfile.close();
 
             }
 

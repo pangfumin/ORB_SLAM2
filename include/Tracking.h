@@ -25,6 +25,7 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
+#include"Output.h"
 #include"Viewer.h"
 #include"FrameDrawer.h"
 #include"Map.h"
@@ -76,6 +77,8 @@ public:
 
 
 public:
+
+    Output mOutput;
 
     // Tracking states
     enum eTrackingState{

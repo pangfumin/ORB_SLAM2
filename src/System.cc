@@ -20,7 +20,6 @@
 
 
 
-#include <Output.h>
 #include "System.h"
 #include "Converter.h"
 #include <thread>
@@ -382,16 +381,17 @@ void System::SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
-    Output o;
-    for(auto pKF : vpKFs) o.add(pKF);
+//    Output o;
+//    for(auto pKF : vpKFs) o.add(pKF);
 
-
+    // incremental
     ofstream f;
     f.open(filename.c_str());
     f << fixed;
-    f << o.getIncJSON();
+    f << mpTracker->mOutput.getIncJSON();
     f.close();
 
+    // non incremental
 //    Output o = Output(vpKFs);
 //    f << o.getJSON();
 //    f.close();
