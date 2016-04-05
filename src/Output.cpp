@@ -5,117 +5,167 @@
  *      Author: Enrico Piazza
  */
 
-#include "../include/Output.h"
-
+#include <MapPoint.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/mat.hpp>
+#include <Output.h>
 #include <stddef.h>
-#include <yaml-cpp/node/impl.h>
-#include <yaml-cpp/node/node.h>
+#include <Thirdparty/rapidjson/prettywriter.h>
+#include <Thirdparty/rapidjson/rapidjson.h>
+#include <Thirdparty/rapidjson/stringbuffer.h>
 #include <algorithm>
 #include <iostream>
 #include <set>
 #include <utility>
 
-#include "../include/MapPoint.h"
-#include "../Thirdparty/rapidjson/document.h"
-#include "../Thirdparty/rapidjson/prettywriter.h"
-#include "../Thirdparty/rapidjson/rapidjson.h"
-#include "../Thirdparty/rapidjson/stringbuffer.h"
-
-namespace YAML {
-
-template<>
-struct convert<ORB_SLAM2::MapPoint*> { //TODO
-  static Node encode(const ORB_SLAM2::MapPoint *mp) {
-    Node node;
-    node["id"] = mp->mnId;
-    return node;
-  }
-
-  static bool decode(const Node& node, ORB_SLAM2::MapPoint& mp) {
-//    if(!node.IsSequence() || node.size() != 3) {
-//      return false;
-//    }
-
-    mp.mnId = node["id"].as<long unsigned int>();
-    return true;
-  }
-};
-
-
-template<>
-struct convert<ORB_SLAM2::KeyFrame*> { //TODO
-  static Node encode(const ORB_SLAM2::KeyFrame *kf) {
-    Node node;
-    node["id"] = kf->mnId;
-    return node;
-  }
-
-  static bool decode(const Node& node, ORB_SLAM2::KeyFrame& kf) {
-//    if(!node.IsSequence() || node.size() != 3) {
-//      return false;
-//    }
-
-    kf.mnId = node["id"].as<long unsigned int>();
-    return true;
-  }
-};
-
-
-}
-
 
 namespace ORB_SLAM2{
 
-Output::Output(std::vector<KeyFrame*> KFs) {
-	vpKFs = KFs;
+//Output::Output(std::vector<KeyFrame*> KFs) {
+//	vpKFs = KFs;
+//}
+
+
+Output::Output(){
+	// INIT
+	jsonDoc_.SetObject();
+	rapidjson::Document::AllocatorType& allocator_ = jsonDoc_.GetAllocator();
+
+	viewsArray_ = rapidjson::Value(rapidjson::kArrayType);
+
+	jsonDoc_.AddMember("slam_data_version", "0.1", allocator_);
+	jsonDoc_.AddMember("root_path", "/home/andrea/Scrivania/Datasets/Middelbury/dinoRing", allocator_);
+
+
+	// create intrinsics
+	rapidjson::Value intrinsicsArray(rapidjson::kArrayType);
+	rapidjson::Value intrinsicObject(rapidjson::kObjectType);
+	rapidjson::Value ptr_wrapperObject(rapidjson::kObjectType);
+	rapidjson::Value valueObject(rapidjson::kObjectType);
+	rapidjson::Value dataObject(rapidjson::kObjectType);
+	rapidjson::Value principal_pointArray(rapidjson::kArrayType);
+
+	intrinsicObject.AddMember("key", 0, allocator_);
+
+	valueObject.AddMember("polymorphic_id", 0, allocator_);
+	valueObject.AddMember("polymorphic_name", "pinhole", allocator_);
+
+	dataObject.AddMember("width", 640, allocator_);
+	dataObject.AddMember("height", 480, allocator_);
+	dataObject.AddMember("focal_length", 0.0, allocator_);
+
+	principal_pointArray.PushBack(1.0f, allocator_).PushBack(2.0f, allocator_);
+
+	dataObject.AddMember("principal_point", principal_pointArray, allocator_);
+	ptr_wrapperObject.AddMember("data", dataObject, allocator_);
+	valueObject.AddMember("ptr_wrapper", ptr_wrapperObject, allocator_);
+	intrinsicObject.AddMember("value", valueObject, allocator_);
+	intrinsicsArray.PushBack(intrinsicObject, allocator_);
+	jsonDoc_.AddMember("intrinsics", intrinsicsArray, allocator_);
+
+	//TODO? ptr_wrapper/id
+
 }
 
-Output::~Output() {
+Output::~Output(){ //TODO
 }
 
+void Output::add(KeyFrame* pKF){
 
-std::string Output::getYamlSfM(){
-	sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
-
-	//rapidjson::Document jsonDoc;
-	//jsonDoc.SetObject();
-	//rapidjson::Document::AllocatorType& allocator = jsonDoc.GetAllocator();
-	YAML::Node node;
-
-	// for each KF, add the observed MPs to the MPs set.
-	std::set<MapPoint*> vpAllMPs;
-
-	for(auto pKF : vpKFs){
-		if(pKF->isBad()) continue;
-
-		std::set<MapPoint*> vpMPs = pKF->GetMapPoints();
-		for(auto pMP : vpMPs){
-			vpAllMPs.insert(pMP);
-		}
+	if(pKF->isBad()){
+		std::cout << "bad KF not inserted" << std::endl;
+		return;
 	}
 
+	rapidjson::Document::AllocatorType& allocator_ = jsonDoc_.GetAllocator();
 
-	for(size_t i=0; i<vpKFs.size(); i++){
-		KeyFrame* pKF = vpKFs[i]; //TODO right?
+	// create and push view object
+	rapidjson::Value viewObject(rapidjson::kObjectType);
 
-		YAML::Node kfNode = YAML::convert<KeyFrame*>(pKF);
-		node["KFs"].push_back(kfNode);
+	viewObject.AddMember("key", pKF->mnId, allocator_);
+	viewObject.AddMember("local_path", "/", allocator_);
+	viewObject.AddMember("filename", "TODO", allocator_);
+	viewObject.AddMember("width", 640, allocator_);//TODO
+	viewObject.AddMember("height", 480, allocator_);//TODO
+	viewObject.AddMember("id_view", pKF->mnId, allocator_);
+	viewObject.AddMember("id_intrinsic", 0, allocator_);
+	viewObject.AddMember("id_pose", pKF->mnId, allocator_);
 
-		for(auto pMP : vpAllMPs){
-			YAML::Node mpNode = YAML::convert<MapPoint*>(pMP);
-			kfNode["points"].push_back(mpNode);
-		}
+
+	// create and insert extrinsic object
+	rapidjson::Value extrinsicObject(rapidjson::kObjectType);
+	rapidjson::Value rotationRowsArray(rapidjson::kArrayType);
+	rapidjson::Value rotationRow1Array(rapidjson::kArrayType);
+	rapidjson::Value rotationRow2Array(rapidjson::kArrayType);
+	rapidjson::Value rotationRow3Array(rapidjson::kArrayType);
+	rapidjson::Value centerArray(rapidjson::kArrayType);
+
+	cv::Mat R = pKF->GetRotation().t();
+	rotationRow1Array.PushBack(R.at<float>(0,0), allocator_).PushBack(R.at<float>(0,1), allocator_).PushBack(R.at<float>(0,2), allocator_);
+	rotationRow2Array.PushBack(R.at<float>(1,0), allocator_).PushBack(R.at<float>(1,1), allocator_).PushBack(R.at<float>(1,2), allocator_);
+	rotationRow3Array.PushBack(R.at<float>(2,0), allocator_).PushBack(R.at<float>(2,1), allocator_).PushBack(R.at<float>(2,2), allocator_);
+
+	rotationRowsArray.PushBack(rotationRow1Array, allocator_);
+	rotationRowsArray.PushBack(rotationRow2Array, allocator_);
+	rotationRowsArray.PushBack(rotationRow3Array, allocator_);
+
+
+	cv::Mat t = pKF->GetCameraCenter();
+	centerArray.PushBack(t.at<float>(0), allocator_).PushBack(t.at<float>(1), allocator_).PushBack(t.at<float>(2), allocator_);
+
+
+	// create and insert structure (observations) object
+	rapidjson::Value observationsArray(rapidjson::kObjectType);
+	for(auto pMP : pKF->GetMapPoints()){
+
+		// create and push observation object
+		rapidjson::Value observationObject(rapidjson::kObjectType);
+		rapidjson::Value XArray(rapidjson::kArrayType);
+		rapidjson::Value xArray(rapidjson::kArrayType);
+
+		observationObject.AddMember("key", pMP->mnId, allocator_);
+
+		cv::Mat p = pMP->GetWorldPos();
+		XArray.PushBack(p.at<float>(0), allocator_).PushBack(p.at<float>(1), allocator_).PushBack(p.at<float>(2), allocator_);
+
+		xArray.PushBack(1.0f, allocator_).PushBack(2.0f, allocator_);
+
+		observationObject.AddMember("X", XArray, allocator_);
+		observationObject.AddMember("x", xArray, allocator_);
+		rapidjson::Value key;
+		key.SetString(std::to_string(pMP->mnId).c_str(), std::to_string(pMP->mnId).size(), allocator_);
+		observationsArray.AddMember(key, observationObject, allocator_);
+
+		//observationsArray.AddMember(rapidjson::Value(rapidjson::GenericValue(std::to_string(pMP->mnId))), observationObject, allocator_);
+		//TODO "id_feat"
 	}
 
-	return node.as<std::string>();
+	extrinsicObject.AddMember("rotation", rotationRowsArray, allocator_);
+	extrinsicObject.AddMember("center", centerArray, allocator_);
+	viewObject.AddMember("extrinsic", extrinsicObject, allocator_);
+	viewObject.AddMember("observations", observationsArray, allocator_);
+	viewsArray_.PushBack(viewObject, allocator_);
 
-	//TODO test, add intrinsics
+}
+
+std::string Output::getIncJSON(){
+
+	rapidjson::Document::AllocatorType& allocator_ = jsonDoc_.GetAllocator();
+
+	jsonDoc_.AddMember("views", viewsArray_, allocator_);
+
+	rapidjson::StringBuffer pretty;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> prettyWriter(pretty);
+	jsonDoc_.Accept(prettyWriter); // TODO can do multiple times?
+	return pretty.GetString();
+//	return "HIIII";
 }
 
 
-std::string Output::getJSON(){
+/**
+ * 		Non incremental version
+ */
+std::string Output::getJSON(std::vector<KeyFrame*> vpKFs){
 	sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
 	rapidjson::Document jsonDoc;

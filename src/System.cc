@@ -377,59 +377,26 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 
 void System::SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &filename)
 {
-    cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
+    cout << endl << "Saving IncJSON to " << filename << " ..." << endl;
 
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
+    Output o;
+    for(auto pKF : vpKFs) o.add(pKF);
+
+
     ofstream f;
     f.open(filename.c_str());
     f << fixed;
-
-    Output o = Output(vpKFs);
-
-    f << o.getJSON();
-
-//
-//    for(size_t i=0; i<vpKFs.size(); i++)
-//    {
-//        KeyFrame* pKF = vpKFs[i]; //TODO right?
-//
-//        if(pKF->isBad())
-//            continue;
-//
-//
-//        // save mnId keyframe
-//        cv::Mat R = pKF->GetRotation().t();
-//        vector<float> q = Converter::toQuaternion(R);
-//
-//        cv::Mat t = pKF->GetCameraCenter();
-//
-//        R[0][0];
-//
-//        f << "KF " << pKF->mnId << ": "
-//        		<< setprecision(6) << pKF->mTimeStamp
-//				<< setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
-//								   << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
-//
-//        // save (good) map points relative to this keyframe
-//        set<MapPoint*> vpMPs = pKF->GetMapPoints();
-//
-//        for(auto pMP : vpMPs)
-//        {
-//        	cv::Mat p = pMP->GetWorldPos();
-//
-//        	f << "MP " << pMP->mnId << ": ("
-//        			<< pMP->Observations() << ") "
-//					<< setprecision(7) << " " << p.at<float>(0) << " " << p.at<float>(1) << " " << p.at<float>(2) << endl;
-//        }
-//
-//
-//
-//    }
-
+    f << o.getIncJSON();
     f.close();
-    cout << endl << "trajectory saved!" << endl;
+
+//    Output o = Output(vpKFs);
+//    f << o.getJSON();
+//    f.close();
+    cout << endl << "IncJSON saved!" << endl;
+
 }
 
 

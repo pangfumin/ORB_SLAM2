@@ -460,23 +460,25 @@ void Tracking::Track()
             	//TEST: print old KF
 				ofstream outfile; outfile.open("inc_KFs_and_MPs.txt", std::ios_base::app);
 
-				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "nMPs: " << mpReferenceKF->GetMapPoints().size() << endl;
+				cv::Mat kfPos = mpReferenceKF->GetCameraCenter();
+
+				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
 
 				for(auto iMP : mpReferenceKF->GetMapPoints())
 				{
 					cv::Mat pos = iMP->GetWorldPos();
-					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t x: " << pos.at<float>(0) << "\t x: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
 				}
 
                 CreateNewKeyFrame();
 
                 //TEST: print new KF
-                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "nMPs: " << mpReferenceKF->GetMapPoints().size() << endl;
+                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
 
                 for(auto iMP : mpReferenceKF->GetMapPoints())
                 {
 					cv::Mat pos = iMP->GetWorldPos();
-					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t x: " << pos.at<float>(0) << "\t x: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
+					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
                 }
                 outfile.close();
 
