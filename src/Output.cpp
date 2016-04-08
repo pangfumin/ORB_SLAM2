@@ -27,13 +27,14 @@ namespace ORB_SLAM2{
 
 
 Output::Output(){
+
 	// INIT
 	jsonDoc_.SetObject();
 	rapidjson::Document::AllocatorType& allocator_ = jsonDoc_.GetAllocator();
 
 	viewsArray_ = rapidjson::Value(rapidjson::kArrayType);
 
-	jsonDoc_.AddMember("slam_data_version", "0.1", allocator_);
+	jsonDoc_.AddMember("slam_data_version", "0.2", allocator_);
 	jsonDoc_.AddMember("root_path", "/home/andrea/Scrivania/Datasets/Middelbury/dinoRing", allocator_);
 
 
@@ -45,7 +46,7 @@ Output::Output(){
 	rapidjson::Value dataObject(rapidjson::kObjectType);
 	rapidjson::Value principal_pointArray(rapidjson::kArrayType);
 
-	intrinsicObject.AddMember("key", 0, allocator_);
+	intrinsicObject.AddMember("intrinsicId", 0, allocator_);
 
 	valueObject.AddMember("polymorphic_id", 0, allocator_);
 	valueObject.AddMember("polymorphic_name", "pinhole", allocator_);
@@ -71,6 +72,11 @@ Output::~Output(){ //TODO
 }
 
 void Output::add(KeyFrame* pKF){
+	if(sKFIds_.count(pKF->mnId)){
+		std::cout << "ignoring KF: " << pKF->mnId << std::endl;
+		return;
+	}
+	sKFIds_.insert(pKF->mnId);
 
 	if(pKF->isBad()){
 		std::cout << "bad KF not inserted" << std::endl;
@@ -82,14 +88,12 @@ void Output::add(KeyFrame* pKF){
 	// create and push view object
 	rapidjson::Value viewObject(rapidjson::kObjectType);
 
-	viewObject.AddMember("key", pKF->mnId, allocator_);
+	viewObject.AddMember("viewId", pKF->mnId, allocator_);
 	viewObject.AddMember("local_path", "/", allocator_);
 	viewObject.AddMember("filename", "TODO", allocator_);
 	viewObject.AddMember("width", 640, allocator_);//TODO
 	viewObject.AddMember("height", 480, allocator_);//TODO
-	viewObject.AddMember("id_view", pKF->mnId, allocator_);
 	viewObject.AddMember("id_intrinsic", 0, allocator_);
-	viewObject.AddMember("id_pose", pKF->mnId, allocator_);
 
 
 	// create and insert extrinsic object
@@ -115,7 +119,7 @@ void Output::add(KeyFrame* pKF){
 
 
 	// create and insert structure (observations) object
-	rapidjson::Value observationsArray(rapidjson::kObjectType);
+	rapidjson::Value observationsArray(rapidjson::kArrayType);
 	for(auto pMP : pKF->GetMapPoints()){
 
 		// create and push observation object
@@ -123,7 +127,7 @@ void Output::add(KeyFrame* pKF){
 		rapidjson::Value XArray(rapidjson::kArrayType);
 		rapidjson::Value xArray(rapidjson::kArrayType);
 
-		observationObject.AddMember("key", pMP->mnId, allocator_);
+		observationObject.AddMember("pointId", pMP->mnId, allocator_);
 
 		cv::Mat p = pMP->GetWorldPos();
 		XArray.PushBack(p.at<float>(0), allocator_).PushBack(p.at<float>(1), allocator_).PushBack(p.at<float>(2), allocator_);
@@ -132,9 +136,7 @@ void Output::add(KeyFrame* pKF){
 
 		observationObject.AddMember("X", XArray, allocator_);
 		observationObject.AddMember("x", xArray, allocator_);
-		rapidjson::Value key;
-		key.SetString(std::to_string(pMP->mnId).c_str(), std::to_string(pMP->mnId).size(), allocator_);
-		observationsArray.AddMember(key, observationObject, allocator_);
+		observationsArray.PushBack(observationObject, allocator_);
 
 		//observationsArray.AddMember(rapidjson::Value(rapidjson::GenericValue(std::to_string(pMP->mnId))), observationObject, allocator_);
 		//TODO "id_feat"

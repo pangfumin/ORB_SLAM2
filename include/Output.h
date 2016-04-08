@@ -27,6 +27,7 @@ public:
 	void add(KeyFrame* pKF);
 	std::string getIncJSON();
 
+	set<long unsigned int> sKFIds_;
 
 	std::vector<KeyFrame*> vpKFs;
 

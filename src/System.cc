@@ -381,8 +381,7 @@ void System::SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
-//    Output o;
-//    for(auto pKF : vpKFs) o.add(pKF);
+
 
     // incremental
     ofstream f;
@@ -390,6 +389,15 @@ void System::SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &
     f << fixed;
     f << mpTracker->mOutput.getIncJSON();
     f.close();
+
+    // non incremental, v0.2
+//    Output o;
+//    for(auto pKF : vpKFs) o.add(pKF);
+//    ofstream f;
+//    f.open(filename.c_str());
+//    f << fixed;
+//    f << o.getIncJSON();
+//    f.close();
 
     // non incremental
 //    Output o = Output(vpKFs);
