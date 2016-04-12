@@ -461,40 +461,10 @@ void Tracking::Track()
             // Check if we need to insert a new keyframe
             if(NeedNewKeyFrame())
             {
-
-            	//TEST: print old KF
-//				ofstream outfile; outfile.open("inc_KFs_and_MPs.txt", std::ios_base::app);
-//
-//				cv::Mat kfPos = mpReferenceKF->GetCameraCenter();
-//
-//				outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\told" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
-//
-//				for(auto iMP : mpReferenceKF->GetMapPoints())
-//				{
-//					cv::Mat pos = iMP->GetWorldPos();
-//					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
-//				}
-
             	mOutput.add(mpReferenceKF);
 
-//            	ofstream f;
-//            	f.open("inc_KFs_and_MPs.txt");
-//            	f << fixed;
-//            	f << mOutput.getIncJSON();
-//            	f.close();
-
                 CreateNewKeyFrame();
-
-                //TEST: print new KF
-//                outfile << endl << endl << "KF id: " << mpReferenceKF->mnId << "\tnew" << "\tnMPs: " << mpReferenceKF->GetMapPoints().size() << "\t x: " << kfPos.at<float>(0) << "\t y: " << kfPos.at<float>(1) << "\t z: " << kfPos.at<float>(2) << endl;
-//
-//                for(auto iMP : mpReferenceKF->GetMapPoints())
-//                {
-//					cv::Mat pos = iMP->GetWorldPos();
-//					outfile << "MP id: " << iMP->mnId << "\tbad: " << iMP->isBad() << "\tn: " << iMP->GetObservations().size() << "\tfound ratio: " << iMP->GetFoundRatio() << "\t y: " << pos.at<float>(0) << "\t z: " << pos.at<float>(1) << "\t x: " << pos.at<float>(2) << endl;
-//                }
-//                outfile.close();
-
+                std::cout << "NewKeyFrame, mnId: " << mpReferenceKF->mnId << std::endl;
             }
 
             // We allow points with high innovation (considererd outliers by the Huber Function)
@@ -525,6 +495,7 @@ void Tracking::Track()
         mLastFrame = Frame(mCurrentFrame);
     }
 
+
     // Store frame pose information to retrieve the complete camera trajectory afterwards.
     if(!mCurrentFrame.mTcw.empty())
     {
@@ -536,6 +507,7 @@ void Tracking::Track()
     }
     else
     {
+    	std::cout << "\tmCurrentFrame.mTcw.empty()" << std::endl;
         // This can happen if tracking is lost
         mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
         mlpReferences.push_back(mlpReferences.back());

@@ -43,6 +43,8 @@ void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopF
     vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
     vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
     BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
+
+    std::cout << "GlobalBundleAdjustemnt finished" << std::endl; //TODO remove
 }
 
 
@@ -234,6 +236,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         }
     }
 
+    std::cout << "BundleAdjustment finished" << std::endl; //TODO remove
 }
 
 int Optimizer::PoseOptimization(Frame *pFrame)
@@ -447,6 +450,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     cv::Mat pose = Converter::toCvMat(SE3quat_recov);
     pFrame->SetPose(pose);
 
+    std::cout << "PoseOptimization on frame "<< pFrame->mnId << " finished" << std::endl; //TODO remove
     return nInitialCorrespondences-nBad;
 }
 
@@ -759,22 +763,35 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     // Recover optimized data
 
     //Keyframes
+    std::cout << "LocalBundleAdjustment optimised KFs: "; //TODO remove
+
     for(list<KeyFrame*>::iterator lit=lLocalKeyFrames.begin(), lend=lLocalKeyFrames.end(); lit!=lend; lit++)
     {
         KeyFrame* pKF = *lit;
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate();
         pKF->SetPose(Converter::toCvMat(SE3quat));
+
+        std::cout << pKF->mnId << " "; //TODO remove
     }
+    std::cout << std::endl << std::endl; //TODO remove
 
     //Points
+    std::cout << "LocalBundleAdjustment optimised MPs: "; //TODO remove
+
     for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
     {
         MapPoint* pMP = *lit;
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
         pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
         pMP->UpdateNormalAndDepth();
+
+        std::cout << pMP->mnId << " "; //TODO remove
     }
+    std::cout << std::endl << std::endl; //TODO remove
+
+
+    std::cout << "LocalBundleAdjustment finished" << std::endl; //TODO remove
 }
 
 
@@ -1041,6 +1058,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
         pMP->UpdateNormalAndDepth();
     }
+    std::cout << "OptimizeEssentialGraph finished" << std::endl; //TODO remove
 }
 
 int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale)
@@ -1237,6 +1255,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
     g2oS12= vSim3_recov->estimate();
 
+    std::cout << "OptimizeSim3 finished" << std::endl; //TODO remove
     return nIn;
 }
 
