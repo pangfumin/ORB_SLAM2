@@ -35,9 +35,9 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
 
 int main(int argc, char **argv)
 {
-    if(argc != 4)
+    if(argc < 4)
     {
-        cerr << endl << "Usage: ./stereo_kitti path_to_vocabulary path_to_settings path_to_sequence" << endl;
+        cerr << endl << "Usage: ./stereo_kitti path_to_vocabulary path_to_settings path_to_sequence [maxImages]" << endl;
         return 1;
     }
 
@@ -47,7 +47,14 @@ int main(int argc, char **argv)
     vector<double> vTimestamps;
     LoadImages(string(argv[3]), vstrImageLeft, vstrImageRight, vTimestamps);
 
-    const int nImages = vstrImageLeft.size();
+    int nImages = vstrImageLeft.size();
+
+    // Only use the first maxImages images ;EP
+	if(argc > 4)
+	{
+		int maxImages = atoi(argv[4]);
+		if(nImages > maxImages) nImages = maxImages;
+	}
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
@@ -69,11 +76,12 @@ int main(int argc, char **argv)
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
         double tframe = vTimestamps[ni];
 
-        if(imLeft.empty())
+        if(imLeft.empty() || imRight.empty())
         {
-            cerr << endl << "Failed to load image at: "
-                 << string(vstrImageLeft[ni]) << endl;
-            return 1;
+            cerr << endl << "Failed to load images at: "
+                 << string(vstrImageLeft[ni]) << " or " <<  string(vstrImageRight[ni]) << endl;
+            //return 1;
+            continue;
         }
 
 #ifdef COMPILEDWITHC11
@@ -122,6 +130,8 @@ int main(int argc, char **argv)
 
     // Save camera trajectory
     SLAM.SaveTrajectoryKITTI("CameraTrajectory.txt");
+
+    SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("KeyFrameAndPointsTrajectory_stereo_kitti.json");
 
     return 0;
 }

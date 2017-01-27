@@ -34,7 +34,7 @@ Output::Output(){
 
 	viewsArray_ = rapidjson::Value(rapidjson::kArrayType);
 
-	jsonDoc_.AddMember("slam_data_version", "0.2", allocator_);
+	jsonDoc_.AddMember("slam_data_version", "0.3", allocator_);
 	jsonDoc_.AddMember("root_path", "/home/andrea/Scrivania/Datasets/Middelbury/dinoRing", allocator_);
 
 
@@ -72,11 +72,11 @@ Output::~Output(){ //TODO
 }
 
 void Output::add(KeyFrame* pKF){
-	if(sKFIds_.count(pKF->mnId)){
-		std::cout << "ignoring KF: " << pKF->mnId << std::endl;
-		return;
-	}
-	sKFIds_.insert(pKF->mnId);
+//	if(sKFIds_.count(pKF->mnId)){
+//		std::cout << "ignoring KF: " << pKF->mnId << std::endl;
+//		return;
+//	}
+//	sKFIds_.insert(pKF->mnId);
 
 	if(pKF->isBad()){
 		std::cout << "bad KF not inserted" << std::endl;

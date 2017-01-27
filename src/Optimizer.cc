@@ -454,7 +454,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     return nInitialCorrespondences-nBad;
 }
 
-void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
+void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, Output& mOutput)
 {    
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
@@ -761,9 +761,10 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     }
 
     // Recover optimized data
+   int countOptKFs = 0, countOptMPs = 0; // TODO remove
 
     //Keyframes
-    std::cout << "LocalBundleAdjustment optimised KFs: "; //TODO remove
+   std::cout << "LocalBundleAdjustment optimised KFs: "; //TODO remove
 
     for(list<KeyFrame*>::iterator lit=lLocalKeyFrames.begin(), lend=lLocalKeyFrames.end(); lit!=lend; lit++)
     {
@@ -773,12 +774,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pKF->SetPose(Converter::toCvMat(SE3quat));
 
         std::cout << pKF->mnId << " "; //TODO remove
+        countOptKFs++;
     }
     std::cout << std::endl << std::endl; //TODO remove
 
-    //Points
-    std::cout << "LocalBundleAdjustment optimised MPs: "; //TODO remove
+    std::cout << "LocalBundleAdjustment Optimised " << countOptKFs << " keyframes" << std::endl;
 
+    //Points
     for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
     {
         MapPoint* pMP = *lit;
@@ -786,10 +788,17 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
         pMP->UpdateNormalAndDepth();
 
-        std::cout << pMP->mnId << " "; //TODO remove
+        countOptMPs++; // TODO remove
     }
-    std::cout << std::endl << std::endl; //TODO remove
 
+    std::cout << "LocalBundleAdjustment Optimised " << countOptMPs << " points" << std::endl; // TODO remove
+
+
+    for(list<KeyFrame*>::iterator lit=lLocalKeyFrames.begin(), lend=lLocalKeyFrames.end(); lit!=lend; lit++)
+    {
+        KeyFrame* pKF = *lit;
+        mOutput.add(pKF);
+    }
 
     std::cout << "LocalBundleAdjustment finished" << std::endl; //TODO remove
 }
