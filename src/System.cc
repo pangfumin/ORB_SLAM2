@@ -112,7 +112,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const int imId)
 {
     if(mSensor!=STEREO)
     {
@@ -154,7 +154,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     }
     }
 
-    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
+    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp,imId);
 }
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
@@ -202,7 +202,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return mpTracker->GrabImageRGBD(im,depthmap,timestamp);
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
+cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const int imId)
 {
     if(mSensor!=MONOCULAR)
     {
@@ -244,7 +244,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
     }
     }
 
-    return mpTracker->GrabImageMonocular(im,timestamp);
+    return mpTracker->GrabImageMonocular(im,timestamp,imId);
 }
 
 void System::ActivateLocalizationMode()
@@ -431,7 +431,8 @@ void System::SaveTrajectoryKITTI(const string &filename)
     // which is true when tracking failed (lbL).
     list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
     list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
+    list<int>::iterator lId = mpTracker->mlFrameImIds.begin();
+    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lId++)
     {
         ORB_SLAM2::KeyFrame* pKF = *lRit;
 
@@ -450,7 +451,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
         cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
         cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
 
-        f << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "  << twc.at<float>(0) << " " <<
+        f << *lId << " " << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "  << twc.at<float>(0) << " " <<
              Rwc.at<float>(1,0) << " " << Rwc.at<float>(1,1)  << " " << Rwc.at<float>(1,2) << " "  << twc.at<float>(1) << " " <<
              Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  << twc.at<float>(2) << endl;
     }
