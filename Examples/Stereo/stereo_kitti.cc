@@ -93,6 +93,12 @@ int main(int argc, char **argv)
         // Pass the images to the SLAM system
         SLAM.TrackStereo(imLeft,imRight,tframe,ni);
 
+//        if(!(ni%1000)){
+//        	SLAM.SaveFrameTrajectoryJson("current_FrameTrajectory.json");
+////            SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("current_KeyFrameAndPointsTrajectory_stereo_kitti.json");
+//
+//        }
+
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #else
@@ -130,6 +136,8 @@ int main(int argc, char **argv)
 
     // Save camera trajectory
     SLAM.SaveTrajectoryKITTI("CameraTrajectory.txt");
+
+    SLAM.SaveFrameTrajectoryJson("FrameTrajectory.json");
 
     SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("KeyFrameAndPointsTrajectory_stereo_kitti.json");
 

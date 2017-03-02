@@ -26,6 +26,11 @@
 #include <pangolin/pangolin.h>
 #include <iomanip>
 
+#include <Thirdparty/rapidjson/document.h>
+#include <Thirdparty/rapidjson/prettywriter.h>
+#include <Thirdparty/rapidjson/rapidjson.h>
+#include <Thirdparty/rapidjson/stringbuffer.h>
+
 namespace ORB_SLAM2
 {
 
@@ -407,6 +412,216 @@ void System::SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &
 
 }
 
+
+void System::SaveFrameTrajectoryJson(const string &filename)
+{
+    cout << endl << "Saving frame trajectory to " << filename << " ..." << endl;
+
+
+	// create rapidjson objects
+	rapidjson::Document jsonDoc;
+	jsonDoc.SetObject();
+	rapidjson::Document::AllocatorType& allocator = jsonDoc.GetAllocator();
+
+	// create view objects
+	rapidjson::Value viewsArray(rapidjson::kArrayType);
+
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    cv::Mat Two = vpKFs[0]->GetPoseInverse();
+
+
+    // Frame pose is stored relative to its reference keyframe (which is optimized by BA and pose graph).
+    // We need to get first the keyframe pose and then concatenate the relative transformation.
+    // Frames not localized (tracking failure) are not saved.
+
+    // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
+    // which is true when tracking failed (lbL).
+    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+    list<int>::iterator lId = mpTracker->mlFrameImIds.begin();
+    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lId++)
+    {
+        ORB_SLAM2::KeyFrame* pKF = *lRit;
+
+//        cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
+
+        while(pKF->isBad())
+        {
+          //  cout << "bad parent" << endl;
+//            Trw = Trw*pKF->mTcp;
+            pKF = pKF->GetParent();
+        }
+
+//        Trw = Trw*pKF->GetPose()*Two;
+
+//        cv::Mat Tcw = (*lit)*Trw;
+//        cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+//        cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+		rapidjson::Value viewObject(rapidjson::kObjectType);
+
+		// create value/ptr_wrapper/data
+		rapidjson::Value valueObject(rapidjson::kObjectType);
+		rapidjson::Value ptr_wrapperObject(rapidjson::kObjectType);
+		rapidjson::Value dataObject(rapidjson::kObjectType);
+
+		viewObject.AddMember("key", *lId, allocator);
+		viewObject.AddMember("num_points", pKF->GetMapPoints().size(), allocator);
+		dataObject.AddMember("local_path", "/", allocator);
+		dataObject.AddMember("filename", "TODO", allocator);
+		dataObject.AddMember("width", (int)(mpTracker->mInitialFrame.mnMaxX - mpTracker->mInitialFrame.mnMinX), allocator);
+		dataObject.AddMember("height", (int)(mpTracker->mInitialFrame.mnMaxY - mpTracker->mInitialFrame.mnMinY), allocator);
+		dataObject.AddMember("id_view", *lId, allocator);
+		dataObject.AddMember("id_intrinsic", 0, allocator);
+		dataObject.AddMember("id_pose", *lId, allocator);
+		ptr_wrapperObject.AddMember("data", dataObject, allocator);
+		valueObject.AddMember("ptr_wrapper", ptr_wrapperObject, allocator);
+		viewObject.AddMember("value", valueObject, allocator);
+
+		// insert view in array
+		viewsArray.PushBack(viewObject, allocator);
+
+    }
+
+
+	// create intrinsics
+	rapidjson::Value intrinsicsArray(rapidjson::kArrayType);
+	rapidjson::Value intrinsicObject(rapidjson::kObjectType);
+
+	intrinsicObject.AddMember("key", 0, allocator);
+
+	rapidjson::Value valueObject(rapidjson::kObjectType);
+	valueObject.AddMember("polymorphic_id", 0, allocator);
+	valueObject.AddMember("polymorphic_name", "pinhole", allocator);
+
+	rapidjson::Value ptr_wrapperObject(rapidjson::kObjectType);
+	rapidjson::Value dataObject(rapidjson::kObjectType);
+
+	dataObject.AddMember("width", (int)(mpTracker->mInitialFrame.mnMaxX - mpTracker->mInitialFrame.mnMinX), allocator);
+	dataObject.AddMember("height", (int)(mpTracker->mInitialFrame.mnMaxY - mpTracker->mInitialFrame.mnMinY), allocator);
+	dataObject.AddMember("focal_length", mpTracker->mInitialFrame.fx, allocator);
+
+	rapidjson::Value principal_pointArray(rapidjson::kArrayType);
+	principal_pointArray.PushBack(mpTracker->mInitialFrame.cx, allocator).PushBack(mpTracker->mInitialFrame.cy, allocator);
+
+	dataObject.AddMember("principal_point", principal_pointArray, allocator);
+
+	ptr_wrapperObject.AddMember("data", dataObject, allocator);
+	valueObject.AddMember("ptr_wrapper", ptr_wrapperObject, allocator);
+
+	intrinsicObject.AddMember("value", valueObject, allocator);
+	intrinsicsArray.PushBack(intrinsicObject, allocator);
+
+	// create extrinsic objects
+	rapidjson::Value extrinsicsArray(rapidjson::kArrayType);
+
+
+
+
+    vpKFs = mpMap->GetAllKeyFrames();
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    Two = vpKFs[0]->GetPoseInverse();
+
+
+    // Frame pose is stored relative to its reference keyframe (which is optimized by BA and pose graph).
+    // We need to get first the keyframe pose and then concatenate the relative transformation.
+    // Frames not localized (tracking failure) are not saved.
+
+    // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
+    // which is true when tracking failed (lbL).
+    lRit = mpTracker->mlpReferences.begin();
+    lId = mpTracker->mlFrameImIds.begin();
+    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lId++)
+    {
+        ORB_SLAM2::KeyFrame* pKF = *lRit;
+
+        cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
+
+        while(pKF->isBad())
+        {
+          //  cout << "bad parent" << endl;
+            Trw = Trw*pKF->mTcp;
+            pKF = pKF->GetParent();
+        }
+
+        Trw = Trw*pKF->GetPose()*Two;
+
+        cv::Mat Tcw = (*lit)*Trw;
+        cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+        cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+        //        f << *lId << " " << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "  << twc.at<float>(0) << " " <<
+        //             Rwc.at<float>(1,0) << " " << Rwc.at<float>(1,1)  << " " << Rwc.at<float>(1,2) << " "  << twc.at<float>(1) << " " <<
+        //             Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  << twc.at<float>(2) << endl;
+
+		rapidjson::Value extrinsicObject(rapidjson::kObjectType);
+
+		extrinsicObject.AddMember("key", *lId, allocator);
+
+		// create value/ptr_wrapper/data
+		rapidjson::Value valueObject(rapidjson::kObjectType);
+		rapidjson::Value rotationRowsArray(rapidjson::kArrayType);
+		rapidjson::Value rotationRow1Array(rapidjson::kArrayType);
+		rapidjson::Value rotationRow2Array(rapidjson::kArrayType);
+		rapidjson::Value rotationRow3Array(rapidjson::kArrayType);
+		rapidjson::Value centerArray(rapidjson::kArrayType);
+
+//		cv::Mat R = pKF->GetRotation().t(); //TODO check type. float?
+		rotationRow1Array.PushBack(Rwc.at<float>(0,0), allocator).PushBack(Rwc.at<float>(0,1), allocator).PushBack(Rwc.at<float>(0,2), allocator);
+		rotationRow2Array.PushBack(Rwc.at<float>(1,0), allocator).PushBack(Rwc.at<float>(1,1), allocator).PushBack(Rwc.at<float>(1,2), allocator);
+		rotationRow3Array.PushBack(Rwc.at<float>(2,0), allocator).PushBack(Rwc.at<float>(2,1), allocator).PushBack(Rwc.at<float>(2,2), allocator);
+
+		rotationRowsArray.PushBack(rotationRow1Array, allocator);
+		rotationRowsArray.PushBack(rotationRow2Array, allocator);
+		rotationRowsArray.PushBack(rotationRow3Array, allocator);
+
+//		cv::Mat t = pKF->GetCameraCenter();
+		centerArray.PushBack(twc.at<float>(0), allocator).PushBack(twc.at<float>(1), allocator).PushBack(twc.at<float>(2), allocator);
+
+		// insert data in ptr_wrapper in value in view
+		valueObject.AddMember("rotation", rotationRowsArray, allocator);
+		valueObject.AddMember("center", centerArray, allocator);
+		extrinsicObject.AddMember("value", valueObject, allocator);
+
+
+		// insert view in array
+
+		extrinsicsArray.PushBack(extrinsicObject, allocator);
+    }
+
+	// create structure objects
+	rapidjson::Value structureArray(rapidjson::kArrayType);
+	rapidjson::Value control_pointsArray(rapidjson::kArrayType);
+
+	jsonDoc.AddMember("sfm_data_version", "0.3", allocator);
+	jsonDoc.AddMember("root_path", "/home/airlab/enrico_ws/SLAM_datasets/KITTI_odometry_dataset/dataset/sequences", allocator);
+	jsonDoc.AddMember("views", viewsArray, allocator);
+	jsonDoc.AddMember("intrinsics", intrinsicsArray, allocator);
+	jsonDoc.AddMember("extrinsics", extrinsicsArray, allocator);
+	jsonDoc.AddMember("structure", structureArray, allocator);
+	jsonDoc.AddMember("control_points", control_pointsArray, allocator);
+
+	rapidjson::StringBuffer pretty;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> prettyWriter(pretty);
+	jsonDoc.Accept(prettyWriter);
+
+	f << pretty.GetString();
+
+    f.close();
+    cout << endl << "json frame trajectory saved!" << endl;
+
+}
 
 void System::SaveTrajectoryKITTI(const string &filename)
 {

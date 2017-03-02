@@ -36,6 +36,7 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 
+
 namespace ORB_SLAM2
 {
 
@@ -106,6 +107,10 @@ public:
         // Call first Shutdown()
         // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
     void SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction(const string &filename);
+
+    // Save camera trajectory in the JSON OpenMvg format.
+    // Call first Shutdown()
+    void SaveFrameTrajectoryJson(const string &filename);
 
     // Save camera trajectory in the KITTI dataset format.
     // Call first Shutdown()

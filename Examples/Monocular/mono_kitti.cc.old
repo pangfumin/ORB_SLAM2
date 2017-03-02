@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         {
             cerr << endl << "Failed to load image at: " << vstrImageFilenames[ni] << endl;
             //return 1;
-            break;
+            continue;
         }
 
 #ifdef COMPILEDWITHC11
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im,tframe,ni);
+        SLAM.TrackMonocular(im,tframe);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -125,12 +125,10 @@ int main(int argc, char **argv)
     cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
-    std::string filnamePostfix(argc>5 ? argv[5] : "");
-
     // Save camera trajectory
-    SLAM.SaveFrameTrajectoryJson("FrameTrajectory"+filnamePostfix+".json");
+    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
-    SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("KeyFrameAndPointsTrajectory"+filnamePostfix+".json");
+    SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("KeyFrameAndPointsTrajectory_mono_kitti.json");
 
     return 0;
 }
