@@ -59,7 +59,7 @@ SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native")
 
 # activate warnings !!!
 SET(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -W")
-SET(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -W")
+SET(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -W -std=c++11")
 
 # specifying compiler flags
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${g2o_CXX_FLAGS}")
@@ -94,9 +94,14 @@ g2o/types/types_sba.cpp
 g2o/types/types_six_dof_expmap.cpp
 g2o/types/types_seven_dof_expmap.cpp
 g2o/types/types_seven_dof_expmap.h
+g2o/types/vertex_se3.cpp
 g2o/types/se3quat.h
 g2o/types/se3_ops.h
 g2o/types/se3_ops.hpp
+g2o/types/dquat2mat.cpp
+g2o/types/edge_se3.cpp
+g2o/types/isometry3d_mappings.cpp
+g2o/types/isometry3d_gradients.cpp
 #core
 g2o/core/base_edge.h
 g2o/core/base_binary_edge.h
