@@ -23,21 +23,34 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/StdVector>
 
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
+#include <Converter.h>
 
 using namespace std;
 
 void LoadImages(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImages, vector<double> &vTimeStamps);
 
+
+void LoadExternPoseMeasurement(const string &strExtPosePath,
+                vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> &vIsoPoses,
+                               vector<double> &vTimeStamps);
+
+
+
 int main(int argc, char **argv)
 {
-    if(argc != 5)
+    if(argc != 6)
     {
-        cerr << endl << "Usage: ./mono_tum path_to_vocabulary path_to_settings path_to_image_folder path_to_times_file" << endl;
+        cerr << endl << "Usage: ./mono_tum path_to_vocabulary path_to_settings "
+                "path_to_image_folder path_to_times_file"
+                " extern_pose_measurement" << endl;
         return 1;
     }
 
@@ -46,6 +59,11 @@ int main(int argc, char **argv)
     vector<double> vTimestamps;
     LoadImages(string(argv[3]), string(argv[4]), vstrImageFilenames, vTimestamps);
 
+    vector<double> vExternPoseTs;
+    vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> vExternPose;
+    LoadExternPoseMeasurement(string(argv[5]), vExternPose, vExternPoseTs);
+    int externPoseCnt = 0;
+
     int nImages = vstrImageFilenames.size();
 
     if(nImages<=0)
@@ -53,6 +71,8 @@ int main(int argc, char **argv)
         cerr << "ERROR: Failed to load images" << endl;
         return 1;
     }
+
+    cout<<"Extern Pose: " <<  vExternPose.size()<<std::endl;
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
@@ -64,6 +84,12 @@ int main(int argc, char **argv)
     cout << endl << "-------" << endl;
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;
+
+    Eigen::Isometry3d T_IC = Eigen::Isometry3d::Identity();
+    T_IC.matrix() << 0.0148655429818, -0.999880929698,   0.00414029679422, -0.0216401454975,
+                     0.999557249008,   0.0149672133247,  0.025715529948,   -0.064676986768,
+                     -0.0257744366974, 0.00375618835797, 0.999660727178,   0.00981073058949,
+                      0.0, 0.0, 0.0, 1.0;
 
     // Main loop
     cv::Mat im;
@@ -86,8 +112,14 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
 
+        while(externPoseCnt < vExternPoseTs.size() && vExternPoseTs.at(externPoseCnt) < tframe )
+            externPoseCnt ++;
+
+        Eigen::Isometry3d T_WC = vExternPose.at(externPoseCnt) * T_IC;
+
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im,tframe);
+        cv::Mat pose = ORB_SLAM2::Converter::toCvMat(T_WC.matrix());
+        SLAM.TrackMonocular(im, pose, tframe);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -151,5 +183,46 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
             vTimeStamps.push_back(t/1e9);
 
         }
+    }
+}
+
+void LoadExternPoseMeasurement(const string &strExtPosePath,
+                               vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> &vIsoPoses,
+                               vector<double> &vTimeStamps) {
+    ifstream fTimes;
+    fTimes.open(strExtPosePath.c_str());
+    string oneLine;
+    while(!fTimes.eof())
+    {
+        std::getline(fTimes, oneLine);
+        std::stringstream stream(oneLine);
+        std::string s;
+        std::getline(stream, s, ',');
+//        std::cout<<"t: "<<s << " ";
+        if (s.empty()) break;
+        double t1 = atof(s.c_str());
+        t1 = t1 * 1e-9;  // [ns] to [s]
+        vTimeStamps.push_back(t1);
+
+        Eigen::Vector3d t_WS;
+        Eigen::Vector4d q_WS;
+
+        for (int j = 0; j < 3; ++j) {
+            std::getline(stream, s, ',');
+//            std::cout<<s <<" ";
+            t_WS[j] = atof(s.c_str());
+        }
+
+        for (int j = 0; j < 4; ++j) {
+            std::getline(stream, s, ',');
+//            std::cout<<s <<" ";
+            q_WS[j] = atof(s.c_str());
+        }
+//        std::cout<<std::endl;
+
+        Eigen::Isometry3d Pose = Eigen::Isometry3d::Identity();
+        Pose.matrix().topLeftCorner(3,3) = Eigen::Quaterniond(q_WS.data()).toRotationMatrix();
+        Pose.matrix().topRightCorner(3,1) = t_WS;
+        vIsoPoses.push_back(Pose);
     }
 }
