@@ -560,6 +560,8 @@ void Tracking::StereoInitialization()
     }
 }
 
+
+    // todo: (pang) : re-sacle using external pose
 void Tracking::MonocularInitialization()
 {
 

@@ -50,6 +50,8 @@ void init();
 using namespace Eigen;
 
 typedef Matrix<double, 6, 6> Matrix6d;
+typedef Matrix<double, 6, 1> Vector6d;
+
 
 
 /**
@@ -202,6 +204,28 @@ public:
 };
 
 
+class  EdgeSE3PoseConstraint: public  BaseUnaryEdge<6, SE3Quat, VertexSE3Expmap>{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgeSE3PoseConstraint(){}
+
+    bool read(std::istream& is);
+
+    bool write(std::ostream& os) const;
+
+    void computeError()  {
+        const VertexSE3Expmap* v1 = static_cast<const VertexSE3Expmap*>(_vertices[0]);
+        SE3Quat obs(_measurement);
+        _delta = v1->estimate()*obs.inverse();
+        _error = _delta.log();
+    }
+
+    Matrix6d JRInv( SE3Quat e );
+    virtual void linearizeOplus();
+private:
+    SE3Quat _delta;
+};
 
 } // end namespace
 

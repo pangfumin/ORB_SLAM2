@@ -305,7 +305,7 @@ Vector3d EdgeStereoSE3ProjectXYZOnlyPose::cam_project(const Vector3d & trans_xyz
   return res;
 }
 
-
+    //
 bool EdgeStereoSE3ProjectXYZOnlyPose::read(std::istream& is){
   for (int i=0; i<=3; i++){
     is >> _measurement[i];
@@ -362,6 +362,37 @@ void EdgeStereoSE3ProjectXYZOnlyPose::linearizeOplus() {
   _jacobianOplusXi(2,4) = 0;
   _jacobianOplusXi(2,5) = _jacobianOplusXi(0,5)-bf*invz_2;
 }
+
+
+//
+bool EdgeSE3PoseConstraint::read(std::istream& is){
+
+  return true;
+}
+
+bool EdgeSE3PoseConstraint::write(std::ostream& os) const {
+
+  return os.good();
+}
+
+Matrix6d EdgeSE3PoseConstraint::JRInv( SE3Quat e )
+{
+  Matrix6d J;
+  Vector6d xi = e.log();
+  J.block(0,0,3,3) = skew(xi.head<3>());
+  J.block(0,3,3,3) = skew(xi.tail<3>());
+  J.block(3,0,3,3) = Eigen::Matrix3d::Zero(3,3);
+  J.block(3,3,3,3) = skew(xi.head<3>());
+  J = J*0.5 + Matrix6d::Identity();
+  return J;
+}
+void EdgeSE3PoseConstraint::linearizeOplus() {
+//  VertexSE3Expmap * vi = static_cast<VertexSE3Expmap *>(_vertices[0]);
+  Matrix6d J = JRInv(_delta);
+  SE3Quat obs(_measurement);
+  _jacobianOplusXi = J * _delta.adj();
+}
+
 
 
 } // end namespace
