@@ -629,12 +629,44 @@ void Tracking::MonocularInitialization()
             cv::Mat Tcw = cv::Mat::eye(4,4,CV_32F);
             Rcw.copyTo(Tcw.rowRange(0,3).colRange(0,3));
             tcw.copyTo(Tcw.rowRange(0,3).col(3));
+
             mCurrentFrame.SetPose(Tcw);
+
+            // rescale
+            ReScaleWithExternalMetricPose();
 
             CreateInitialMapMonocular();
         }
     }
 }
+
+void Tracking::ReScaleWithExternalMetricPose() {
+    // re-scale
+//            std::cout<<"mInitialFrame.mExternPose: "<<mInitialFrame.mExternPose<<std::endl;
+//            std::cout<<"mCurrentFrame.mExternPose: "<<mCurrentFrame.mExternPose<<std::endl;
+
+    Eigen::Isometry3d T_WC0 = Converter::toIsometry3d(mInitialFrame.mExternPose);
+//            std::cout<<"T_WC0: "<<T_WC0.matrix()<<std::endl;
+    Eigen::Isometry3d T_WC1 = Converter::toIsometry3d(mCurrentFrame.mExternPose);
+//            std::cout<<"T_WC1: "<<T_WC1.matrix()<<std::endl;
+
+    double scale  = (T_WC1.matrix().topRightCorner(3,1) - T_WC0.matrix().topRightCorner(3,1)).norm();
+//    Eigen::Isometry3d T_wc = T_WC1.inverse()*T_WC0;
+    //
+
+    std::cout<<"Scale: "<<scale<<std::endl;
+
+    std::cout<<"T_cw before re-scale: "<<mCurrentFrame.mTcw<<std::endl;
+    cv::Mat reScaleT = mCurrentFrame.mTcw;
+    reScaleT.rowRange(0,3).col(3) *= scale;
+    mCurrentFrame.SetPose(reScaleT);
+    std::cout<<"T_cw after re-scale: "<<mCurrentFrame.mTcw<<std::endl;
+
+    for (auto& pt : mvIniP3D) {
+        pt *= scale;
+    }
+}
+
 
 void Tracking::CreateInitialMapMonocular()
 {

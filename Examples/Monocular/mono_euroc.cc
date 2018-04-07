@@ -91,9 +91,11 @@ int main(int argc, char **argv)
                      -0.0257744366974, 0.00375618835797, 0.999660727178,   0.00981073058949,
                       0.0, 0.0, 0.0, 1.0;
 
+    int imStart = 0;
+    while(vTimestamps[imStart] < vExternPoseTs.at(0))  imStart ++;
     // Main loop
     cv::Mat im;
-    for(int ni=0; ni<nImages; ni++)
+    for(int ni=imStart; ni<nImages; ni++)
     {
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
@@ -112,13 +114,14 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
 
-        while(externPoseCnt < vExternPoseTs.size() && vExternPoseTs.at(externPoseCnt) < tframe )
+        while(externPoseCnt < vExternPoseTs.size()-1 && vExternPoseTs.at(externPoseCnt) < tframe )
             externPoseCnt ++;
 
         Eigen::Isometry3d T_WC = vExternPose.at(externPoseCnt) * T_IC;
 
         // Pass the image to the SLAM system
         cv::Mat pose = ORB_SLAM2::Converter::toCvMat(T_WC.matrix());
+//        std::cout<<"pose "<< ni <<" "<< externPoseCnt <<" "<< pose <<std::endl;
 //        std::cout<<T_WC.matrix()<<std::endl;
         SLAM.TrackMonocular(im, pose, tframe);
 

@@ -125,6 +125,7 @@ protected:
 
     // Map initialization for monocular
     void MonocularInitialization();
+    void ReScaleWithExternalMetricPose();
     void CreateInitialMapMonocular();
 
     void CheckReplacedInLastFrame();

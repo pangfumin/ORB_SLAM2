@@ -135,7 +135,7 @@ Eigen::Matrix<double,3,3> Converter::toMatrix3d(const cv::Mat &cvMat3)
 }
 
 
-Eigen::Isometry3d toIsometry3d(const cv::Mat &cvMat4) {
+Eigen::Isometry3d Converter::toIsometry3d(const cv::Mat &cvMat4) {
     Eigen::Isometry3d M;
 
     M.matrix() << cvMat4.at<float>(0,0), cvMat4.at<float>(0,1), cvMat4.at<float>(0,2), cvMat4.at<float>(0,3),
