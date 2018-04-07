@@ -126,7 +126,9 @@ protected:
     // Map initialization for monocular
     void MonocularInitialization();
     void ReScaleWithExternalMetricPose();
+    void AlignMap();
     void CreateInitialMapMonocular();
+
 
     void CheckReplacedInLastFrame();
     bool TrackReferenceKeyFrame();

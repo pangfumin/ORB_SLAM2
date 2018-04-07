@@ -45,7 +45,6 @@ void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopF
     BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
 }
 
-// todo:(pang) add pose constraint
 void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
                                  int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
@@ -78,10 +77,27 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Converter::toSE3Quat(pKF->GetPose()));
         vSE3->setId(pKF->mnId);
-        vSE3->setFixed(pKF->mnId==0);
+        //vSE3->setFixed(pKF->mnId==0);   // Note: w/ SE3PoseConstraint  not fix th first vertex.
         optimizer.addVertex(vSE3);
         if(pKF->mnId>maxKFid)
             maxKFid=pKF->mnId;
+    }
+
+
+    //  add pose constraints
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+        if(pKF->isBad())
+            continue;
+        g2o::EdgeSE3PoseConstraint* e = new g2o::EdgeSE3PoseConstraint();
+        e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
+        Eigen::Isometry3d pose = Converter::toIsometry3d(pKF->mExternPose);
+        std::cout<<"Pose: "<<pKF->mnId<<" "<<vpKFs.size()<<" "<<pose.matrix()<<std::endl;
+        g2o::SE3Quat obs(pose.matrix().topLeftCorner(3,3), pose.matrix().topRightCorner(3,1));
+        e->setMeasurement(obs);
+        e->setInformation(Eigen::Matrix<double,6,6>::Identity());
+        optimizer.addEdge(e);
     }
 
     const float thHuber2D = sqrt(5.99);

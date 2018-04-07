@@ -561,7 +561,6 @@ void Tracking::StereoInitialization()
 }
 
 
-    // todo: (pang) : re-sacle using external pose
 void Tracking::MonocularInitialization()
 {
 
@@ -635,6 +634,9 @@ void Tracking::MonocularInitialization()
             // rescale
             ReScaleWithExternalMetricPose();
 
+            // todo: align Map
+            //AlignMap();
+
             CreateInitialMapMonocular();
         }
     }
@@ -645,28 +647,47 @@ void Tracking::ReScaleWithExternalMetricPose() {
 //            std::cout<<"mInitialFrame.mExternPose: "<<mInitialFrame.mExternPose<<std::endl;
 //            std::cout<<"mCurrentFrame.mExternPose: "<<mCurrentFrame.mExternPose<<std::endl;
 
-    Eigen::Isometry3d T_WC0 = Converter::toIsometry3d(mInitialFrame.mExternPose);
+    Eigen::Isometry3d T_W1C0 = Converter::toIsometry3d(mInitialFrame.mExternPose);
 //            std::cout<<"T_WC0: "<<T_WC0.matrix()<<std::endl;
-    Eigen::Isometry3d T_WC1 = Converter::toIsometry3d(mCurrentFrame.mExternPose);
+    Eigen::Isometry3d T_W1C1 = Converter::toIsometry3d(mCurrentFrame.mExternPose);
 //            std::cout<<"T_WC1: "<<T_WC1.matrix()<<std::endl;
 
-    double scale  = (T_WC1.matrix().topRightCorner(3,1) - T_WC0.matrix().topRightCorner(3,1)).norm();
+    double scale  = (T_W1C1.matrix().topRightCorner(3,1) - T_W1C0.matrix().topRightCorner(3,1)).norm();
 //    Eigen::Isometry3d T_wc = T_WC1.inverse()*T_WC0;
     //
-
-    std::cout<<"Scale: "<<scale<<std::endl;
-
+    std::cout<< "Scale: "<< scale<< std::endl;
     std::cout<<"T_cw before re-scale: "<<mCurrentFrame.mTcw<<std::endl;
-    cv::Mat reScaleT = mCurrentFrame.mTcw;
-    reScaleT.rowRange(0,3).col(3) *= scale;
-    mCurrentFrame.SetPose(reScaleT);
+    cv::Mat reScaleTcw = mCurrentFrame.mTcw;
+    reScaleTcw.rowRange(0,3).col(3) *= scale;
+    mCurrentFrame.SetPose(reScaleTcw);
+
     std::cout<<"T_cw after re-scale: "<<mCurrentFrame.mTcw<<std::endl;
 
-    for (auto& pt : mvIniP3D) {
-        pt *= scale;
+
+    for (auto& pt: mvIniP3D) {
+        pt = pt*scale;
     }
 }
 
+void Tracking::AlignMap() {
+
+    cv::Mat T_W1W0 =mInitialFrame.mExternPose;
+    mInitialFrame.SetPose(T_W1W0.inv());
+    mCurrentFrame.SetPose(mCurrentFrame.mTcw*T_W1W0.inv());
+
+    cv::Mat R_W1W0 =  T_W1W0.rowRange(0,3).colRange(0,3);
+    cv::Mat t_W1W0 =  T_W1W0.rowRange(0,3).col(3);
+    for(size_t i=0; i<mvIniMatches.size();i++) {
+        if (mvIniMatches[i] < 0)
+            continue;
+        cv::Mat pt(mvIniP3D[i]);
+
+        cv::Mat transformedPt = R_W1W0*pt + t_W1W0;
+        cv::Point3f W1pt = cv::Point3f(transformedPt.at<float>(0),transformedPt.at<float>(1),transformedPt.at<float>(2));
+        mvIniP3D[i] = W1pt;
+    }
+
+}
 
 void Tracking::CreateInitialMapMonocular()
 {
