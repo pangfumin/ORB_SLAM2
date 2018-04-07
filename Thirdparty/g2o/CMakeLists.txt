@@ -177,3 +177,6 @@ g2o/stuff/string_tools.cpp
 g2o/stuff/property.cpp       
 g2o/stuff/property.h       
 )
+
+add_executable(testSE3PoseConstraint test/testSE3PoseConstraint.cpp)
+target_link_libraries(testSE3PoseConstraint g2o)

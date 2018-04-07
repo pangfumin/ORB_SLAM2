@@ -387,7 +387,6 @@ Matrix6d EdgeSE3PoseConstraint::JRInv( SE3Quat e )
   return J;
 }
 void EdgeSE3PoseConstraint::linearizeOplus() {
-//  VertexSE3Expmap * vi = static_cast<VertexSE3Expmap *>(_vertices[0]);
   Matrix6d J = JRInv(_delta);
   SE3Quat obs(_measurement);
   _jacobianOplusXi = J * _delta.adj();

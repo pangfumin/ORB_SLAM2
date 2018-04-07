@@ -119,6 +119,7 @@ int main(int argc, char **argv)
 
         // Pass the image to the SLAM system
         cv::Mat pose = ORB_SLAM2::Converter::toCvMat(T_WC.matrix());
+//        std::cout<<T_WC.matrix()<<std::endl;
         SLAM.TrackMonocular(im, pose, tframe);
 
 #ifdef COMPILEDWITHC11
