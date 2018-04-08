@@ -106,7 +106,7 @@ public:
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
 
     // Frame timestamp.
-    double mTimeStamp;
+    int64_t mTimeStamp;
 
     // Calibration matrix and OpenCV distortion parameters.
     cv::Mat mK;

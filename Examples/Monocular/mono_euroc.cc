@@ -31,7 +31,7 @@
 using namespace std;
 
 void LoadImages(const string &strImagePath, const string &strPathTimes,
-                vector<string> &vstrImages, vector<double> &vTimeStamps);
+                vector<string> &vstrImages, vector<int64_t> &vTimeStamps);
 
 int main(int argc, char **argv)
 {
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     // Retrieve paths to images
     vector<string> vstrImageFilenames;
-    vector<double> vTimestamps;
+    vector<int64_t> vTimestamps;
     LoadImages(string(argv[3]), string(argv[4]), vstrImageFilenames, vTimestamps);
 
     int nImages = vstrImageFilenames.size();
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     {
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
-        double tframe = vTimestamps[ni];
+        int64_t tframe = vTimestamps[ni];
 
         if(im.empty())
         {
@@ -102,9 +102,9 @@ int main(int argc, char **argv)
         // Wait to load the next frame
         double T=0;
         if(ni<nImages-1)
-            T = vTimestamps[ni+1]-tframe;
+            T = (vTimestamps[ni+1]-tframe)/1e9;
         else if(ni>0)
-            T = tframe-vTimestamps[ni-1];
+            T = (tframe-vTimestamps[ni-1])/1e9;
 
         if(ttrack<T)
             usleep((T-ttrack)*1e6);
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 }
 
 void LoadImages(const string &strImagePath, const string &strPathTimes,
-                vector<string> &vstrImages, vector<double> &vTimeStamps)
+                vector<string> &vstrImages, vector<int64_t> &vTimeStamps)
 {
     ifstream fTimes;
     fTimes.open(strPathTimes.c_str());
@@ -146,9 +146,9 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
             stringstream ss;
             ss << s;
             vstrImages.push_back(strImagePath + "/" + ss.str() + ".png");
-            double t;
+            int64_t t;
             ss >> t;
-            vTimeStamps.push_back(t/1e9);
+            vTimeStamps.push_back(t);
 
         }
     }
