@@ -91,6 +91,9 @@ def align(model,data):
     
     model_aligned = s*rot * model + trans
     alignment_error = model_aligned - data
+
+    print rot
+    print trans
     
     trans_error = numpy.sqrt(numpy.sum(numpy.multiply(alignment_error,alignment_error),0)).A[0]
         
