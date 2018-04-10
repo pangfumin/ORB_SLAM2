@@ -1,1 +1,1 @@
-./Examples/Monocular/mono_euroc /home/pang/software/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/pang/software/ORB_SLAM2/Examples/Monocular/EuRoC.yaml /media/pang/Plus/dataset/MH_01_easy/mav0/cam0/data/ /home/pang/software/ORB_SLAM2/Examples/Monocular/EuRoC_TimeStamps/MH01.txt 
+./Examples/Monocular/mono_euroc /home/pang/software/ORB_SLAM2/Vocabulary/ORBvoc.bin /home/pang/software/ORB_SLAM2/Examples/Monocular/EuRoC.yaml /media/pang/Plus/dataset/MH_01_easy/mav0/cam0/data/ /home/pang/software/ORB_SLAM2/Examples/Monocular/EuRoC_TimeStamps/MH01.txt
