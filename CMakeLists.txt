@@ -76,6 +76,7 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+src/Localizer.cc
 # external
 src/Duration.cpp
 src/Time.cpp
@@ -93,43 +94,49 @@ ${Boost_LIBRARIES}
 
 # Build examples
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
-
-add_executable(rgbd_tum
-Examples/RGB-D/rgbd_tum.cc)
-target_link_libraries(rgbd_tum ${PROJECT_NAME})
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
-
-add_executable(stereo_kitti
-Examples/Stereo/stereo_kitti.cc)
-target_link_libraries(stereo_kitti ${PROJECT_NAME})
-
-add_executable(stereo_euroc
-Examples/Stereo/stereo_euroc.cc)
-target_link_libraries(stereo_euroc ${PROJECT_NAME})
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
+#
+#add_executable(rgbd_tum
+#Examples/RGB-D/rgbd_tum.cc)
+#target_link_libraries(rgbd_tum ${PROJECT_NAME})
+#
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+#
+#add_executable(stereo_kitti
+#Examples/Stereo/stereo_kitti.cc)
+#target_link_libraries(stereo_kitti ${PROJECT_NAME})
+#
+#add_executable(stereo_euroc
+#Examples/Stereo/stereo_euroc.cc)
+#target_link_libraries(stereo_euroc ${PROJECT_NAME})
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 
-add_executable(mono_tum
-Examples/Monocular/mono_tum.cc)
-target_link_libraries(mono_tum ${PROJECT_NAME})
-
-add_executable(mono_kitti
-Examples/Monocular/mono_kitti.cc)
-target_link_libraries(mono_kitti ${PROJECT_NAME})
+#add_executable(mono_tum
+#Examples/Monocular/mono_tum.cc)
+#target_link_libraries(mono_tum ${PROJECT_NAME})
+#
+#add_executable(mono_kitti
+#Examples/Monocular/mono_kitti.cc)
+#target_link_libraries(mono_kitti ${PROJECT_NAME})
 
 add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
 
+add_executable(localte_in_map
+        Examples/Monocular/localte_in_map.cc)
+target_link_libraries(localte_in_map ${PROJECT_NAME})
+
+
 # Build tools
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tools)
 add_executable(bin_vocabulary
 tools/bin_vocabulary.cc)
-
 target_link_libraries(bin_vocabulary ${PROJECT_NAME})
+
+
 add_executable(extractGroudTruth
         tools/extractGroudTruth.cpp)
 target_link_libraries(extractGroudTruth ${PROJECT_NAME})
