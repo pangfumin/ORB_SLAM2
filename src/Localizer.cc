@@ -82,13 +82,53 @@ namespace  ORB_SLAM2 {
         RecoverMap();
     }
 
-    bool Localizer::LocateFrame(const cv::Mat & frame, const double ts, Eigen::Isometry3d& T_wc ) {
+    bool Localizer::LocateFrame(const cv::Mat & frame, const double ts, Eigen::Isometry3d& T_wc) {
         // Warp to Frame
         mCurrentFrame = Frame(frame,ts,mpORBextractor,mpORBVocabulary,mK,mDistCoef,0,0);
         bool success = Relocalization();
 
-       return true;
+        if (!success) return false;
+
+        int num_inlier = 0;
+        LocateResult lr;
+
+        for(int i =0; i<mCurrentFrame.N; i++) {
+            MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+            if(pMP && !mCurrentFrame.mvbOutlier[i]) {
+                num_inlier ++;
+                cv::Mat Xw = pMP->GetWorldPos();
+                lr.inlier_point2Ds.push_back(mCurrentFrame.mvKeysUn.at(i));
+                lr.inlier_point3Ds.push_back(Xw);
+
+            }
+        }
+
+        lr.T_cw = mCurrentFrame.mTcw;
+        lr.num_inlier = num_inlier;
+
+        mCurrentLocateCache = lr;
+        return success;
     }
+
+    std::vector<cv::KeyPoint> Localizer:: ProjectLandmarkToFrame(){
+        std::vector<cv::KeyPoint> res;
+
+        for (int i = 0; i < mCurrentLocateCache.inlier_point3Ds.size(); i++) {
+            cv::Mat pt = mCurrentLocateCache.inlier_point3Ds.at(i);
+            cv::Mat R_cw = mCurrentLocateCache.T_cw.rowRange(0,3).colRange(0,3);
+            cv::Mat t_cw = mCurrentLocateCache.T_cw.rowRange(0,3).col(3);
+            cv::Mat Xc = R_cw*pt+t_cw;
+
+            cv::KeyPoint reprojected = mCurrentLocateCache.inlier_point2Ds.at(i);
+            float inv_z = 1.0/ Xc.at<float>(2);
+            reprojected.pt.x = mK.at<float>(0,0)* Xc.at<float>(0)*inv_z + mK.at<float>(0,2);
+            reprojected.pt.y = mK.at<float>(1,1)* Xc.at<float>(1)*inv_z + mK.at<float>(1,2);
+            res.push_back(reprojected);
+        }
+
+        return res;
+    }
+
 
 
     void Localizer::LoadMap(const std::string &filename)
