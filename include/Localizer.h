@@ -19,6 +19,7 @@
 namespace  ORB_SLAM2 {
     class Map;
     class KeyFrameDatabase;
+    class ORBextractor;
 
 
     class Localizer {
@@ -27,18 +28,31 @@ namespace  ORB_SLAM2 {
                   const std::string& configFile,
                   const std::string& vocFile);
 
-        Eigen::Isometry3d LocateFrame(const cv::Mat & frame);
+        bool LocateFrame(const cv::Mat & frame, const double ts, Eigen::Isometry3d& T_wc );
 
         // Save / Load the current map for Mono Execution
         void SaveMap(const std::string &filename);
         void LoadMap(const std::string &filename);
 
     private:
+        void RecoverMap();
+        bool Relocalization();
+
+        //Calibration matrix
+        cv::Mat mK;
+        cv::Mat mDistCoef;
+
+        //ORB
+        ORBextractor* mpORBextractor;
+
         Map* mpMap;
         KeyFrameDatabase* mpKeyFrameDatabase;
         ORBVocabulary* mpORBVocabulary;
 
-        Frame mCurFrame;
+        Frame mCurrentFrame;
+
+        std::map<long unsigned int,long unsigned int> mKeyframe_id_index;
+        std::map<long unsigned int,long unsigned int> mMappoint_id_index;
     };
 }
 
