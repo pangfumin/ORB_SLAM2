@@ -125,6 +125,13 @@ add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
 
+
+
+add_executable(build_map
+        Examples/Monocular/build_map.cpp)
+target_link_libraries(build_map ${PROJECT_NAME})
+
+
 add_executable(localte_in_map
         Examples/Monocular/localte_in_map.cc)
 target_link_libraries(localte_in_map ${PROJECT_NAME})
