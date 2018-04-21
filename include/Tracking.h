@@ -185,6 +185,8 @@ protected:
     //Calibration matrix
     cv::Mat mK;
     cv::Mat mDistCoef;
+    std::string mCameraType;
+    float mw;
     float mbf;
 
     //New KeyFrame rules (according to fps)

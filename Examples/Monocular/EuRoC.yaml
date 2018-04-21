@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
 #--------------------------------------------------------------------------------------------
-
+CameraType: equidistant
 # Camera calibration and distortion parameters (OpenCV) 
 Camera.fx: 458.654
 Camera.fy: 457.296

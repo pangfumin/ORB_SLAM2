@@ -57,6 +57,11 @@ public:
     // Constructor for Monocular cameras.
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
 
+
+    // Constructor for Monocular cameras.
+    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, float& w, const float &bf, const float &thDepth);
+
+
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im);
 
@@ -117,6 +122,8 @@ public:
     static float invfx;
     static float invfy;
     cv::Mat mDistCoef;
+    float mw;
+
 
     // Stereo baseline multiplied by fx.
     float mbf;
@@ -194,9 +201,14 @@ private:
     // Only for the RGB-D case. Stereo must be already rectified!
     // (called in the constructor).
     void UndistortKeyPoints();
+    void UndistortKeyPointsFOV();
+    void UnProjectPoints(cv::Mat& PtsIn, cv::Mat& PtsOut);
+
+    float invrtrans(float r, float dW, float mdOneOver2Tan);
 
     // Computes image bounds for the undistorted image (called in the constructor).
     void ComputeImageBounds(const cv::Mat &imLeft);
+    void ComputeImageBoundsFOV(const cv::Mat &imLeft);
 
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();

@@ -70,18 +70,29 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     K.at<float>(1,2) = cy;
     K.copyTo(mK);
 
-    cv::Mat DistCoef(4,1,CV_32F);
-    DistCoef.at<float>(0) = fSettings["Camera.k1"];
-    DistCoef.at<float>(1) = fSettings["Camera.k2"];
-    DistCoef.at<float>(2) = fSettings["Camera.p1"];
-    DistCoef.at<float>(3) = fSettings["Camera.p2"];
-    const float k3 = fSettings["Camera.k3"];
-    if(k3!=0)
-    {
-        DistCoef.resize(5);
-        DistCoef.at<float>(4) = k3;
+
+
+    fSettings["CameraType"] >> mCameraType;
+    std::cout<< "Camera Type: "<< mCameraType<<std::endl;
+
+    if (mCameraType == "fov") {
+        mw = fSettings["Camera.w"];
+    } else {
+        cv::Mat DistCoef(4,1,CV_32F);
+        DistCoef.at<float>(0) = fSettings["Camera.k1"];
+        DistCoef.at<float>(1) = fSettings["Camera.k2"];
+        DistCoef.at<float>(2) = fSettings["Camera.p1"];
+        DistCoef.at<float>(3) = fSettings["Camera.p2"];
+        const float k3 = fSettings["Camera.k3"];
+        if(k3!=0)
+        {
+            DistCoef.resize(5);
+            DistCoef.at<float>(4) = k3;
+        }
+        DistCoef.copyTo(mDistCoef);
+
     }
-    DistCoef.copyTo(mDistCoef);
+
 
     mbf = fSettings["Camera.bf"];
 
@@ -103,13 +114,18 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     cout << "- fy: " << fy << endl;
     cout << "- cx: " << cx << endl;
     cout << "- cy: " << cy << endl;
-    cout << "- k1: " << DistCoef.at<float>(0) << endl;
-    cout << "- k2: " << DistCoef.at<float>(1) << endl;
-    if(DistCoef.rows==5)
-        cout << "- k3: " << DistCoef.at<float>(4) << endl;
-    cout << "- p1: " << DistCoef.at<float>(2) << endl;
-    cout << "- p2: " << DistCoef.at<float>(3) << endl;
-    cout << "- fps: " << fps << endl;
+
+    if (mCameraType == "fov") {
+        cout << "- w: " << mw << endl;
+    } else {
+        cout << "- k1: " << mDistCoef.at<float>(0) << endl;
+        cout << "- k2: " << mDistCoef.at<float>(1) << endl;
+        if(mDistCoef.rows==5)
+            cout << "- k3: " << mDistCoef.at<float>(4) << endl;
+        cout << "- p1: " << mDistCoef.at<float>(2) << endl;
+        cout << "- p2: " << mDistCoef.at<float>(3) << endl;
+        cout << "- fps: " << fps << endl;
+    }
 
 
     int nRGB = fSettings["Camera.RGB"];
@@ -266,10 +282,18 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const int64_t &timestamp
             cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
     }
 
-    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-    else
-        mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET) {
+        if (mCameraType == "fov")
+            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mw,mbf,mThDepth);
+        else
+            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    }
+    else {
+        if (mCameraType == "fov")
+            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mw,mbf,mThDepth);
+        else
+            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    }
 
     Track();
 

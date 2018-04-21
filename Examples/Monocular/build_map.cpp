@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     }
 
 
-    std::string camera_config = dataset_path + "/camera_kalibr.yaml";
+    std::string camera_config = dataset_path + "/camera_fov.yaml";
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],camera_config,ORB_SLAM2::System::MONOCULAR,true);
 

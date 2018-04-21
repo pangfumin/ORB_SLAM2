@@ -38,7 +38,7 @@ Frame::Frame()
 //Copy Constructor
 Frame::Frame(const Frame &frame)
     :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
-     mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()),
+     mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()), mw(frame.mw),
      mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn),  mvuRight(frame.mvuRight),
      mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
@@ -226,6 +226,65 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 
     AssignFeaturesToGrid();
 }
+
+
+
+Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, float& w, const float &bf, const float &thDepth)
+        :mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+         mTimeStamp(timeStamp), mK(K.clone()),mw(w), mbf(bf), mThDepth(thDepth)
+{
+    // Frame ID
+    mnId=nNextId++;
+
+    // Scale Level Info
+    mnScaleLevels = mpORBextractorLeft->GetLevels();
+    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    mfLogScaleFactor = log(mfScaleFactor);
+    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+
+    // ORB extraction
+    ExtractORB(0,imGray);
+
+    N = mvKeys.size();
+
+    if(mvKeys.empty())
+        return;
+
+    UndistortKeyPointsFOV();
+
+    // Set no stereo information
+    mvuRight = vector<float>(N,-1);
+    mvDepth = vector<float>(N,-1);
+
+    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+    mvbOutlier = vector<bool>(N,false);
+
+    // This is done only for the first Frame (or after a change in the calibration)
+    if(mbInitialComputations)
+    {
+        ComputeImageBoundsFOV(imGray);
+
+        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
+        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
+
+        fx = K.at<float>(0,0);
+        fy = K.at<float>(1,1);
+        cx = K.at<float>(0,2);
+        cy = K.at<float>(1,2);
+        invfx = 1.0f/fx;
+        invfy = 1.0f/fy;
+
+        mbInitialComputations=false;
+    }
+
+    mb = mbf/fx;
+
+    AssignFeaturesToGrid();
+}
+
 
 void Frame::AssignFeaturesToGrid()
 {
@@ -433,6 +492,76 @@ void Frame::UndistortKeyPoints()
     }
 }
 
+
+void Frame::UndistortKeyPointsFOV()
+{
+    if(mw ==0.0)
+    {
+        mvKeysUn=mvKeys;
+        return;
+    }
+
+    // Fill matrix with points
+    cv::Mat mat(mvKeys.size(),2,CV_32F);
+    for(unsigned int i=0; i<mvKeys.size(); i++)
+    {
+        mat.at<float>(i,0)=mvKeys[i].pt.x;
+        mat.at<float>(i,1)=mvKeys[i].pt.y;
+    }
+
+    UnProjectPoints(mat, mat);
+
+
+    // Fill undistorted keypoint vector
+    mvKeysUn.resize(mvKeys.size());
+    for(unsigned int i=0; i<mvKeys.size(); i++)
+    {
+        cv::KeyPoint kp = mvKeys[i];
+        kp.pt.x=mat.at<float>(i,0);
+        kp.pt.y=mat.at<float>(i,1);
+        mvKeysUn[i]=kp;
+    }
+}
+
+void Frame::UnProjectPoints(cv::Mat& PtsIn, cv::Mat& PtsOut)
+{
+    float mvLastDistCam0, mvLastDistCam1;
+    float mdLastDistR, mdLastR;
+    float dFactor;
+
+    float mvFocal0 = mK.at<float>(0,0);
+    float mvFocal1 = mK.at<float>(1,1);
+    float mvInvFocal0 = 1.0/mvFocal0;
+    float mvInvFocal1 = 1.0/mvFocal1;
+    float mvCenter0 = mK.at<float>(0,2);
+    float mvCenter1 = mK.at<float>(1,2);
+    float dW = mw;
+    float mdOneOver2Tan = 1.0 / (2.0 * tan(dW / 2.0));
+
+    cv::Mat PtsOutTmp = cv::Mat(PtsIn.rows, PtsIn.cols, CV_32F);
+
+    for(int i=0; i<PtsIn.rows; i++){
+        mvLastDistCam0 = (PtsIn.at<float>(i,0) - mvCenter0) * mvInvFocal0;
+        mvLastDistCam1 = (PtsIn.at<float>(i,1) - mvCenter1) * mvInvFocal1;
+        mdLastDistR = sqrt(mvLastDistCam0*mvLastDistCam0 + mvLastDistCam1*mvLastDistCam1);
+        mdLastR = invrtrans(mdLastDistR, dW, mdOneOver2Tan);
+        if(mdLastDistR > 0.01)
+            dFactor =  mdLastR / mdLastDistR;
+        else
+            dFactor = 1.0;
+        PtsOutTmp.at<float>(i,0) = mvLastDistCam0*dFactor*mvFocal0+mvCenter0;
+        PtsOutTmp.at<float>(i,1) = mvLastDistCam1*dFactor*mvFocal1+mvCenter1;
+    }
+    PtsOutTmp.copyTo(PtsOut);
+}
+
+inline float Frame::invrtrans(float r, float dW, float mdOneOver2Tan)
+{
+    if(dW == 0.0)
+        return r;
+    return(tan(r * dW) * mdOneOver2Tan);
+}
+
 void Frame::ComputeImageBounds(const cv::Mat &imLeft)
 {
     if(mDistCoef.at<float>(0)!=0.0)
@@ -462,6 +591,37 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         mnMaxY = imLeft.rows;
     }
 }
+
+
+
+void Frame::ComputeImageBoundsFOV(const cv::Mat &imLeft)
+{
+    if(mw != 0.0)
+    {
+        cv::Mat mat(4,2,CV_32F);
+        mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
+        mat.at<float>(1,0)=imLeft.cols; mat.at<float>(1,1)=0.0;
+        mat.at<float>(2,0)=0.0; mat.at<float>(2,1)=imLeft.rows;
+        mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
+
+        // Undistort corners
+        UnProjectPoints(mat, mat);
+
+        mnMinX = min(mat.at<float>(0,0),mat.at<float>(2,0));
+        mnMaxX = max(mat.at<float>(1,0),mat.at<float>(3,0));
+        mnMinY = min(mat.at<float>(0,1),mat.at<float>(1,1));
+        mnMaxY = max(mat.at<float>(2,1),mat.at<float>(3,1));
+
+    }
+    else
+    {
+        mnMinX = 0.0f;
+        mnMaxX = imLeft.cols;
+        mnMinY = 0.0f;
+        mnMaxY = imLeft.rows;
+    }
+}
+
 
 void Frame::ComputeStereoMatches()
 {
