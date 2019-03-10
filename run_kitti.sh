@@ -1,0 +1,1 @@
+./Examples/Monocular/mono_kitti Vocabulary/ORBvoc.txt Examples/Monocular/KITTI00-02.yaml /home/pang/data/dataset/kitti/00 1000 _KITTI00_mono_1000frames
