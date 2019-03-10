@@ -27,6 +27,8 @@
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
+#include <unistd.h>
+
 
 using namespace std;
 
@@ -134,6 +136,7 @@ int main(int argc, char **argv)
 
     // Save camera trajectory
     SLAM.SaveTrajectoryTUM("CameraTrajectory.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");   
 
     SLAM.SaveKeyFrameAndMapPointsTrajectoryMeshReconstruction("KeyFrameAndPointsTrajectory.json");
 
