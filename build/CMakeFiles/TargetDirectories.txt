@@ -1,5 +1,0 @@
-/home/airlab/enrico_ws/ORB_SLAM2_Enri2077/build/CMakeFiles/ORB_SLAM2.dir
-/home/airlab/enrico_ws/ORB_SLAM2_Enri2077/build/CMakeFiles/mono_kitti.dir
-/home/airlab/enrico_ws/ORB_SLAM2_Enri2077/build/CMakeFiles/mono_tum.dir
-/home/airlab/enrico_ws/ORB_SLAM2_Enri2077/build/CMakeFiles/rgbd_tum.dir
-/home/airlab/enrico_ws/ORB_SLAM2_Enri2077/build/CMakeFiles/stereo_kitti.dir
