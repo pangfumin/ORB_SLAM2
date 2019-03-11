@@ -115,6 +115,7 @@ int main(int argc, char **argv)
     }
 
     // Stop all threads
+    std::cout << "slam shutdown..." << std::endl;
     SLAM.Shutdown();
 
     // Tracking time statistics

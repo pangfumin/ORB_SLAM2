@@ -87,6 +87,8 @@ void LoopClosing::Run()
     }
 
     SetFinish();
+    std::cout << "loopclosure finished !" << std::endl;
+
 }
 
 void LoopClosing::InsertKeyFrame(KeyFrame *pKF)

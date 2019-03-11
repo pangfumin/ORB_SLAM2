@@ -168,6 +168,8 @@ void Viewer::Run()
     }
 
     SetFinish();
+    std::cout << "viewer finished !" << std::endl;
+
 }
 
 void Viewer::RequestFinish()

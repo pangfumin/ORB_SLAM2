@@ -110,6 +110,7 @@ void LocalMapping::Run()
     }
 
     SetFinish();
+    std::cout << "localmapping finished !" << std::endl;
 }
 
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
