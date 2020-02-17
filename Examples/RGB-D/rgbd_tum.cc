@@ -27,17 +27,20 @@
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
+#include <Time.hpp>
+#include <temporal-buffer.h>
 
 using namespace std;
 
 void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesRGB,
                 vector<string> &vstrImageFilenamesD, vector<double> &vTimestamps);
-
+void LoadGroundTruth(const string &stGtFilename, 
+                vector<Eigen::Matrix<double,7,1>> &vGroundtruth, vector<double> &vTimestamps);
 int main(int argc, char **argv)
 {
-    if(argc != 5)
+    if(argc != 6)
     {
-        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association" << endl;
+        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association path_to_groundtruth" << endl;
         return 1;
     }
 
@@ -45,9 +48,18 @@ int main(int argc, char **argv)
     vector<string> vstrImageFilenamesRGB;
     vector<string> vstrImageFilenamesD;
     vector<double> vTimestamps;
+    vector<double> vGtTimestamps;
+    vector<Eigen::Matrix<double,7,1>> vGroundtruth;
     string strAssociationFilename = string(argv[4]);
+    string strGroundTruthFilename = string(argv[5]);
     LoadImages(strAssociationFilename, vstrImageFilenamesRGB, vstrImageFilenamesD, vTimestamps);
-
+    LoadGroundTruth(strGroundTruthFilename, vGroundtruth, vGtTimestamps);
+    common::TemporalBuffer<Eigen::Matrix<double,7,1> > gt_buffer;
+    for (int i = 0; i < vGroundtruth.size(); i++) {
+        Time ts = Time(vGtTimestamps.at(i));
+        gt_buffer.addValue(ts.toNSec(), vGroundtruth.at(i));
+    } 
+    std::cout << "load gt: " << gt_buffer.size() << std::endl;
     // Check consistency in the number of images and depthmaps
     int nImages = vstrImageFilenamesRGB.size();
     if(vstrImageFilenamesRGB.empty())
@@ -94,6 +106,14 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
 
+        // get gt pose
+        Eigen::Matrix<double,7,1> value;
+        gt_buffer.getNearestValueToTime(Time(tframe).toNSec(), &value);
+        Eigen::Vector3d t = value.head<3>();
+        Eigen::Quaterniond q;
+        q.coeffs() << value.tail<4>();
+
+        std::cout << value.transpose() << std::endl;
         // Pass the image to the SLAM system
         SLAM.TrackRGBD(imRGB,imD,tframe);
 
@@ -164,4 +184,42 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
 
         }
     }
+}
+
+void LoadGroundTruth(const string &stGtFilename, 
+                vector<Eigen::Matrix<double,7,1>> &vGroundtruth, vector<double> &vTimestamps)
+{
+    ifstream imu_file;
+    imu_file.open(stGtFilename.c_str());
+    string line;
+    getline(imu_file, line);
+    int i = 0;
+    while (! line.empty()) {
+        char time_string[128];
+        Eigen::VectorXd gt(7);
+        
+        if (line[0] == '#') {
+            getline(imu_file, line);
+            continue;
+        }
+        getline(imu_file, line);
+        if (sscanf(line.c_str(), "%s %lf %lf %lf %lf %lf %lf %lf ",
+            time_string,
+            &gt[0],
+            &gt[1],
+            &gt[2],
+            &gt[3],
+            &gt[4],
+            &gt[5],
+            &gt[6]) != 8) {
+        // LOG(ERROR) << "Cannot read imu! Line:";
+        // LOG(ERROR) << line;
+        return ;
+        }
+    
+        // std::cout << "Gt: " << Time(atof(time_string)) << " " << gt.transpose() <<" " << i++<<  std::endl;
+        vTimestamps.push_back((atof(time_string)));
+        vGroundtruth.push_back(gt);
+    }
+    return;
 }
