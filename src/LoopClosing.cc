@@ -38,7 +38,23 @@
 namespace ORB_SLAM2
 {
 
-LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
+bool LoopClosing::GetMapUpdateFlagForTracking()
+{
+    unique_lock<mutex> lock(mMutexMapUpdateFlag);
+    return mbMapUpdateFlagForTracking;
+}
+
+void LoopClosing::SetMapUpdateFlagInTracking(bool bflag)
+{
+    unique_lock<mutex> lock(mMutexMapUpdateFlag);
+    mbMapUpdateFlagForTracking = bflag;
+}
+
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+
+LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale, ConfigParam* pParams):
     mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
     mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)

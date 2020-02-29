@@ -26,6 +26,13 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include <time.h>
+
+#include "IMU/configparam.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
@@ -34,6 +41,115 @@ bool has_suffix(const std::string &str, const std::string &suffix) {
 
 namespace ORB_SLAM2
 {
+
+
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+
+bool System::bLocalMapAcceptKF()
+{
+    return (mpLocalMapper->AcceptKeyFrames() && !mpLocalMapper->isStopped());
+    //return mpLocalMapper->ForsyncCheckNewKeyFrames();
+}
+
+
+void System::SaveKeyFrameTrajectoryNavState(const string &filename)
+{
+    cout << endl << "Saving keyframe NavState to " << filename << " ..." << endl;
+
+    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    //cv::Mat Two = vpKFs[0]->GetPoseInverse();
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+       // pKF->SetPose(pKF->GetPose()*Two);
+
+        if(pKF->isBad())
+            continue;
+
+        Eigen::Vector3d P = pKF->GetNavState().Get_P();
+        Eigen::Vector3d V = pKF->GetNavState().Get_V();
+        Eigen::Quaterniond q = pKF->GetNavState().Get_R().unit_quaternion();
+        Eigen::Vector3d bg = pKF->GetNavState().Get_BiasGyr();
+        Eigen::Vector3d ba = pKF->GetNavState().Get_BiasAcc();
+        Eigen::Vector3d dbg = pKF->GetNavState().Get_dBias_Gyr();
+        Eigen::Vector3d dba = pKF->GetNavState().Get_dBias_Acc();
+        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " ";
+        f << P(0) << " " << P(1) << " " << P(2) << " ";
+        f << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << " ";
+        f << V(0) << " " << V(1) << " " << V(2) << " ";
+        f << bg(0)+dbg(0) << " " << bg(1)+dbg(1) << " " << bg(2)+dbg(2) << " ";
+        f << ba(0)+dba(0) << " " << ba(1)+dba(1) << " " << ba(2)+dba(2) << " ";
+//        f << bg(0) << " " << bg(1) << " " << bg(2) << " ";
+//        f << ba(0) << " " << ba(1) << " " << ba(2) << " ";
+//        f << dbg(0) << " " << dbg(1) << " " << dbg(2) << " ";
+//        f << dba(0) << " " << dba(1) << " " << dba(2) << " ";
+        f << endl;
+    }
+
+    f.close();
+    cout << endl << "NavState trajectory saved!" << endl;
+}
+//
+//cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp)
+//{
+//    if(mSensor!=MONOCULAR)
+//    {
+//        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
+//        exit(-1);
+//    }
+//
+//    // Check mode change
+//    {
+//        unique_lock<mutex> lock(mMutexMode);
+//        if(mbActivateLocalizationMode)
+//        {
+//            mpLocalMapper->RequestStop();
+//
+//            // Wait until Local Mapping has effectively stopped
+//            while(!mpLocalMapper->isStopped())
+//            {
+//                usleep(1000);
+//            }
+//
+//            mpTracker->InformOnlyTracking(true);
+//            mbActivateLocalizationMode = false;
+//        }
+//        if(mbDeactivateLocalizationMode)
+//        {
+//            mpTracker->InformOnlyTracking(false);
+//            mpLocalMapper->Release();
+//            mbDeactivateLocalizationMode = false;
+//        }
+//    }
+//
+//    // Check reset
+//    {
+//    unique_lock<mutex> lock(mMutexReset);
+//    if(mbReset)
+//    {
+//        mpTracker->Reset();
+//        mbReset = false;
+//    }
+//    }
+//
+//    return mpTracker->GrabImageMonoVI(im,vimu,timestamp);
+//}
+
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer):mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
@@ -82,6 +198,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
     cout << "Vocabulary loaded!" << endl << endl;
 
+    ConfigParam config(strSettingsFile);
+
     //Create KeyFrame Database
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
@@ -95,14 +213,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
+                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor,&config);
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
+    mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR,&config);
     mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
 
     //Initialize the Loop Closing thread and launch
-    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
+    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, /*mSensor!=MONOCULAR*/true,&config);
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
 
     //Initialize the Viewer thread and launch
