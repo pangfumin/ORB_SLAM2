@@ -285,6 +285,7 @@ protected:
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
+
 };
 
 } //namespace ORB_SLAM
