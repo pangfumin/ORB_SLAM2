@@ -28,22 +28,18 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV 3.0 QUIET)
-if(NOT OpenCV_FOUND)
-   find_package(OpenCV 2.4.3 QUIET)
-   if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
-   endif()
-endif()
-
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(OpenCV 3.3.0 REQUIRED)
+find_package(Eigen3 3.2.10 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(Cholmod REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
+${PROJECT_SOURCE_DIR}/src
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+${CHOLMOD_INCLUDE_DIR}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -68,6 +64,26 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+
+include/Frame.h
+include/KeyFrame.h
+include/Tracking.h
+include/LocalMapping.h
+
+src/IMU/configparam.h
+src/IMU/configparam.cpp
+
+src/IMU/imudata.h
+src/IMU/imudata.cpp
+src/IMU/IMUPreintegrator.h
+src/IMU/IMUPreintegrator.cpp
+src/IMU/so3.cpp
+src/IMU/so3.h
+src/IMU/NavState.h
+src/IMU/NavState.cpp
+
+src/IMU/g2otypes.h
+src/IMU/g2otypes.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -76,6 +92,10 @@ ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+cholmod
+${CHOLMOD_LIBRARIES}
+${BLAS_LIBRARIES}
+${LAPACK_LIBRARIES}
 )
 
 # Build examples
