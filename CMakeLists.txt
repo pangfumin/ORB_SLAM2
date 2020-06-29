@@ -103,6 +103,12 @@ add_executable(mono_tum
 Examples/Monocular/mono_tum.cc)
 target_link_libraries(mono_tum ${PROJECT_NAME})
 
+add_executable(mono_my_nova
+        Examples/Monocular/mono_my_nova.cc
+        Examples/ROS/ORB_SLAM2/src/AR/FileSystemTools.cpp)
+target_link_libraries(mono_my_nova ${PROJECT_NAME})
+
+
 add_executable(mono_kitti
 Examples/Monocular/mono_kitti.cc)
 target_link_libraries(mono_kitti ${PROJECT_NAME})
