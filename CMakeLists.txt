@@ -123,3 +123,9 @@ add_executable(mono_tum_ar
         Examples/ROS/ORB_SLAM2/src/AR/ViewerAR.cc)
 target_link_libraries(mono_tum_ar ${PROJECT_NAME})
 
+add_executable(mono_nova_ar
+        Examples/ROS/ORB_SLAM2/src/AR/mono_nova_ar.cc
+        Examples/ROS/ORB_SLAM2/src/AR/FileSystemTools.cpp
+        Examples/ROS/ORB_SLAM2/src/AR/ViewerAR.cc)
+target_link_libraries(mono_nova_ar ${PROJECT_NAME})
+
