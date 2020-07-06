@@ -1,2 +1,2 @@
-./Examples/Monocular/mono_my_nova /home/pang/software/ORB_SLAM2/Vocabulary/ORBvoc.bin  /home/pang/software/ORB_SLAM2/Examples/Monocular/huawei_nova5.yaml /home/pang/dataset/ar/test_desk
+./Examples/Monocular/mono_my_nova /home/pang/software/ORB_SLAM2/Vocabulary/ORBvoc.bin  /home/pang/software/ORB_SLAM2/Examples/Monocular/huawei_nova5.yaml /home/pang/dataset/ar/imu_Pose/2020_07_06_19_28_06
 

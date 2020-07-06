@@ -218,6 +218,31 @@ void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
     glPopMatrix();
 }
 
+void MapDrawer::DrawPlane(int ndivs, float ndivsize)
+{
+    // Plane parallel to x-z at origin with normal -y
+    const float minx = -ndivs*ndivsize;
+    const float minz = -ndivs*ndivsize;
+    const float maxx = ndivs*ndivsize;
+    const float maxz = ndivs*ndivsize;
+
+
+    glLineWidth(2);
+    glColor3f(0.7f,0.7f,1.0f);
+    glBegin(GL_LINES);
+
+    for(int n = 0; n<=2*ndivs; n++)
+    {
+        glVertex3f(minx+ndivsize*n,0,minz);
+        glVertex3f(minx+ndivsize*n,0,maxz);
+        glVertex3f(minx,0,minz+ndivsize*n);
+        glVertex3f(maxx,0,minz+ndivsize*n);
+    }
+
+    glEnd();
+
+}
+
 
 void MapDrawer::SetCurrentCameraPose(const cv::Mat &Tcw)
 {

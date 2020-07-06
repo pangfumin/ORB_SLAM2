@@ -135,6 +135,8 @@ void Viewer::Run()
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
 
+        mpMapDrawer->DrawPlane(10,0.05);
+
         pangolin::FinishFrame();
 
         cv::Mat im = mpFrameDrawer->DrawFrame();
