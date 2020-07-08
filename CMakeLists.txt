@@ -68,6 +68,8 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+src/Time.cpp
+src/Duration.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -116,6 +118,12 @@ target_link_libraries(mono_kitti ${PROJECT_NAME})
 add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
+
+add_executable(mono_zju
+        Examples/Monocular/mono_zju.cc
+        Examples/ROS/ORB_SLAM2/src/AR/FileSystemTools.cpp
+        )
+target_link_libraries(mono_zju ${PROJECT_NAME})
 
 
 add_executable(mono_tum_ar
