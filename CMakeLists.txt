@@ -143,3 +143,8 @@ add_executable(tool_calculate_imu_camera_lag
         tools/calculate_imu_camera_lag.cpp
         )
 target_link_libraries(tool_calculate_imu_camera_lag ${PROJECT_NAME})
+
+add_executable(calculate_imu_camera_lag_shuyuan
+        tools/calculate_imu_camera_lag_shuyuan.cpp
+        )
+target_link_libraries(calculate_imu_camera_lag_shuyuan ${PROJECT_NAME})
