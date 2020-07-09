@@ -5,6 +5,9 @@ Examples/Monocular/mono_tum
 Examples/Monocular/mono_my_nova
 Examples/Monocular/mono_nova_ar
 Examples/Monocular/mono_zju
+Examples/Monocular/calculate_imu_camera_lag_ar_data
+Examples/Monocular/calculate_imu_camera_lag_shuyuan
+Examples/Monocular/tool_calculate_imu_camera_lag
 Examples/RGB-D/rgbd_tum
 Examples/ROS/ORB_SLAM2/CMakeLists.txt.user
 Examples/ROS/ORB_SLAM2/Mono

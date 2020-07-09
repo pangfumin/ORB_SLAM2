@@ -28,11 +28,12 @@
 
 #include<System.h>
 #include "../ROS/ORB_SLAM2/src/AR/FileSystemTools.h"
+#include "Time.hpp"
 
 using namespace std;
 
 void LoadImages(const string &dataset_folder, vector<string> &vstrImageFilenames,
-                vector<double> &vTimestamps);
+                vector<Time> &vTimestamps);
 
 int main(int argc, char **argv)
 {
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
 
     // Retrieve paths to images
     vector<string> vstrImageFilenames;
-    vector<double> vTimestamps;
+    vector<Time> vTimestamps;
     string strFile = string(argv[3])+"/image";
     LoadImages(strFile, vstrImageFilenames, vTimestamps);
 
@@ -67,7 +68,7 @@ int main(int argc, char **argv)
     {
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
-        double tframe = 0.033 * ni;
+        double tframe =  vTimestamps[ni].toSec();
 
         if(im.empty())
         {
@@ -98,9 +99,9 @@ int main(int argc, char **argv)
         // Wait to load the next frame
         double T=0;
         if(ni<nImages-1)
-            T = 0.033 * (ni+1)-tframe;
+            T = vTimestamps[ni+1].toSec()-tframe;
         else if(ni>0)
-            T = tframe- 0.033 * (ni-1);
+            T = tframe- vTimestamps[ni-1].toSec();
 
         if(ttrack<T)
             usleep((T-ttrack)*1e6);
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
 
     return 0;
 }
-void LoadImages(const std::string &dataset_folder, std::vector<std::string> &vstrImageFilenames, std::vector<double> &vTimestamps)
+void LoadImages(const std::string &dataset_folder, std::vector<std::string> &vstrImageFilenames, std::vector<Time> &vTimestamps)
 {
     common::getAllFilesInFolder(dataset_folder, &vstrImageFilenames);
     std::cout<<"image0_list: " << vstrImageFilenames.size() << std::endl;
@@ -134,7 +135,16 @@ void LoadImages(const std::string &dataset_folder, std::vector<std::string> &vst
         return !common::compareNumericPartsOfStrings(a,b);
     });
 
-//    for (auto i : vstrImageFilenames) {
-//        std::cout << i << std::endl;
-//    }
+    for (auto  name: vstrImageFilenames) {
+        std::string path, file_name, file_name_ext, ext;
+        common::splitPathAndFilename(name, &path, &file_name_ext);
+        common::splitFilePathAndExtension(file_name_ext, &file_name, &ext);
+        uint64_t  nsec = std::stol(file_name);
+
+        std::cout << nsec << std::endl;
+
+        Time ts; ts.fromNSec(nsec);
+
+        vTimestamps.push_back(ts);
+    }
 }
