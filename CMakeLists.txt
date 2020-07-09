@@ -137,3 +137,9 @@ add_executable(mono_nova_ar
         Examples/ROS/ORB_SLAM2/src/AR/ViewerAR.cc)
 target_link_libraries(mono_nova_ar ${PROJECT_NAME})
 
+## tools
+
+add_executable(tool_calculate_imu_camera_lag
+        tools/calculate_imu_camera_lag.cpp
+        )
+target_link_libraries(tool_calculate_imu_camera_lag ${PROJECT_NAME})
