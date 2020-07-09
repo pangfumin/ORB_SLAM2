@@ -27,6 +27,10 @@
 #include <pangolin/pangolin.h>
 #include <iomanip>
 
+#include <Time.hpp>
+#include <fstream>
+
+
 bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
     return (index != std::string::npos);
@@ -122,6 +126,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+    debug_ofs_.open("/home/pang/orb_debug.txt");
+}
+
+System::~System() {
+    debug_ofs_.close();
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -167,6 +177,8 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     }
 
     cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
+
+
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
@@ -269,6 +281,15 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
     }
 
     cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
+
+    if (!Tcw.empty()) {
+        //    debug_ofs_
+        Eigen::Matrix3d  Rcw = Converter::toMatrix3d(Tcw).topLeftCorner<3,3>();
+        Eigen::Quaterniond Qwc(Rcw.inverse());
+        debug_ofs_ << Time(timestamp).toNSec() << " " << Qwc.w() << " " << Qwc.x() << " " << Qwc.y() << " " << Qwc.z() << std::endl;
+        std::cout  << Time(timestamp).toNSec() << " " << Qwc.w() << " " << Qwc.x() << " " << Qwc.y() << " " << Qwc.z() << std::endl;
+    }
+
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;

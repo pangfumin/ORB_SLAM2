@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
 
     // Vector for tracking time statistics
-    vector<Time> vTimesTrack;
+    vector<double> vTimesTrack;
     vTimesTrack.resize(nImages);
 
     cout << endl << "-------" << endl;
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     {
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_GRAYSCALE);
-        double tframe = vTimestamps[ni].toSec();
+        double tframe =  vTimestamps[ni].toSec();
 
         if(im.empty())
         {
@@ -94,14 +94,19 @@ int main(int argc, char **argv)
 
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
 
-//        vTimesTrack[ni]=ttrack;
+        vTimesTrack[ni]=ttrack;
 
         // Wait to load the next frame
         double T=0;
-        if(ni<nImages-1)
-            T = 0.033 * (ni+1)-tframe;
+        if(ni<nImages-1) {
+            T =  vTimestamps[ni+1].toSec()-tframe;
+            std::cout << "dt: " << T << std::endl;
+
+        }
         else if(ni>0)
-            T = tframe- 0.033 * (ni-1);
+            T = tframe - vTimestamps[ni-1].toSec();
+
+        std::cout  << "ni: " << ni << "/" << nImages << " " << (T-ttrack) * 1e6 <<  std::endl;
 
         if(ttrack<T)
             usleep((T-ttrack)*1e6);
@@ -115,7 +120,7 @@ int main(int argc, char **argv)
     float totaltime = 0;
     for(int ni=0; ni<nImages; ni++)
     {
-        totaltime+=(float)vTimesTrack[ni].toSec();
+        totaltime+=(float)vTimesTrack[ni];
     }
     cout << "-------" << endl << endl;
     cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
@@ -136,19 +141,16 @@ void LoadImages(const std::string &dataset_folder, std::vector<std::string> &vst
     });
 
     for (auto  name: vstrImageFilenames) {
-        std::cout << "name: " << name << std::endl;
         std::string path, file_name, file_name_ext, ext;
         common::splitPathAndFilename(name, &path, &file_name_ext);
         common::splitFilePathAndExtension(file_name_ext, &file_name, &ext);
-        std::cout << file_name << std::endl;
         uint64_t  nsec = std::stol(file_name);
+
+        std::cout << nsec << std::endl;
 
         Time ts; ts.fromNSec(nsec);
 
         vTimestamps.push_back(ts);
-
-
-
     }
 
 }
